@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zkSI | Noise Mining for private SI</title>
+<meta name="description" content="zkSI v0.1: hide a private SI request among decoys, padded to fixed sizes. Runs locally in your browser.">
+<meta name="theme-color" content="#212121">
+<link rel="icon" type="image/svg+xml" href="assets/zksi-mark-B-light.svg" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/svg+xml" href="assets/zksi-mark-B-dark.svg" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="zkSI | Noise Mining for private SI">
+<meta property="og:description" content="zkSI v0.1: hide a private SI request among decoys, padded to fixed sizes. Runs locally in your browser.">
+<meta property="og:image" content="https://zksi.io/assets/og.jpg">
+<meta property="og:url" content="https://zksi.io/">
+<link rel="canonical" href="https://zksi.io/">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/inter-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/inter-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+
+:root{
+  --ink:#212121; --paper:#F5F4F0; --paper-2:#FFFEFB; --mute:#6C6C70;
+  --olive:#C7C7A3; --lime:#EBFF79; --orange:#E45E3F;
+  --bg:var(--paper); --fg:var(--ink); --fg-2:var(--mute);
+  --glass:rgba(245,244,240,.42); --glass-line:rgba(33,33,33,.14); --dot:var(--ink);
+  --sans:Inter,system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace; --mono-s:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:var(--ink); --fg:var(--paper-2); --fg-2:#A0A0A0;
+    --glass:rgba(33,33,33,.38); --glass-line:rgba(255,254,251,.14); --dot:var(--paper-2);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:var(--ink); --fg:var(--paper-2); --fg-2:#A0A0A0;
+  --glass:rgba(33,33,33,.38); --glass-line:rgba(255,254,251,.14); --dot:var(--paper-2);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* header */
+.top{position:fixed;inset:0 0 auto 0;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px;font-family:var(--mono-s);font-size:12px;letter-spacing:.02em}
+.top{transition:background .3s ease,border-color .3s ease;border-bottom:1px solid transparent}
+.top.solid{background:color-mix(in srgb,var(--bg) 94%,transparent);border-bottom-color:var(--glass-line)}
+.mark{display:flex;align-items:center;line-height:0}
+.mark img{height:26px;width:auto}
+.logo-l{display:none}
+:root[data-theme="light"] .logo-l{display:block}
+:root[data-theme="light"] .logo-d{display:none}
+.nav{display:flex;gap:22px;align-items:center}
+.nav a{color:var(--fg);text-decoration:none;opacity:.8}
+.nav a:hover{opacity:1}
+.soon-n{opacity:.45}
+.soon-n:after{content:" · soon"}
+.toggle{font:inherit;color:var(--fg);background:none;border:1px solid var(--glass-line);border-radius:999px;padding:6px 12px;cursor:pointer}
+
+/* cta */
+.cta{display:inline-flex;align-items:center;gap:10px;margin-top:16px;font:500 13px var(--mono);letter-spacing:.04em;color:var(--bg);background:var(--fg);padding:11px 16px;border-radius:2px;text-decoration:none;transition:background .2s,color .2s}
+.cta:hover,.cta:focus-visible{background:var(--orange);color:var(--paper-2);outline:none}
+.cta.hot{background:var(--orange);color:var(--paper-2)}
+.cta.hot:hover,.cta.hot:focus-visible{background:var(--paper-2);color:var(--ink);box-shadow:inset 0 0 0 1px rgba(33,33,33,.18)}
+.big-cta{margin-top:34px;font-size:15px;padding:14px 22px}
+.nav .nav-cta{opacity:1;border:1px solid var(--fg);padding:6px 12px;border-radius:999px}
+.nav .nav-cta:hover{background:var(--fg);color:var(--bg)}
+/* hero */
+.hero{position:relative;height:100svh;min-height:620px;display:grid;place-items:center;overflow:hidden}
+#noise{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
+.fallback{position:absolute;inset:0;background:
+  radial-gradient(40% 35% at 78% 45%, var(--orange) 0%, transparent 70%),
+  radial-gradient(35% 30% at 70% 85%, var(--lime) 0%, transparent 70%),
+  radial-gradient(45% 40% at 15% 70%, var(--orange) 0%, transparent 70%), var(--olive);opacity:.9}
+
+.card{position:relative;z-index:2;width:min(440px,calc(100% - 32px));padding:14px 12px 16px;
+  background:var(--glass);backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1);color:var(--fg)}
+.card i{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--dot)}
+.card i:nth-child(1){left:-4px;top:-4px}.card i:nth-child(2){right:-4px;top:-4px}
+.card i:nth-child(3){left:-4px;bottom:-4px}.card i:nth-child(4){right:-4px;bottom:-4px}
+
+.title{font-weight:600;font-size:clamp(34px,4.6vw,46px);line-height:1.02;letter-spacing:-.02em}
+.title div{display:flex;justify-content:space-between;gap:12px}
+.title sup{font-size:.38em;font-weight:600;vertical-align:top;position:relative;top:.25em;margin-left:2px}
+.lead{margin-top:14px;font-size:13px;line-height:1.55;font-weight:500}
+.mono{margin-top:12px;font-family:var(--mono);font-size:12px;line-height:1.6;text-align:justify;text-transform:lowercase}
+
+.sim{margin-top:16px;font-family:var(--mono-s);font-size:11px}
+.sim-head{display:flex;justify-content:space-between;color:var(--fg-2);margin-bottom:6px}
+.tag{border:1px solid currentColor;padding:1px 6px;border-radius:2px}
+.bar{display:flex;height:10px;border:1px solid var(--fg)}
+.bar .real{background:var(--fg);transition:width .6s ease}
+.bar .fill{flex:1;background:repeating-linear-gradient(90deg,var(--fg) 0 1px,transparent 1px 3px);opacity:.55}
+.sim-row{display:flex;justify-content:space-between;margin-top:6px}
+.sim-row b{font-weight:500}
+.formula{margin-top:8px;color:var(--fg-2)}
+
+.cue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;font-family:var(--mono-s);font-size:11px;letter-spacing:.3em;color:var(--fg);opacity:.75}
+
+/* mix section */
+.mix{position:relative;height:320vh}
+.mix-stage{position:sticky;top:0;height:100svh;overflow:hidden}
+#ring{position:absolute;inset:0}
+#ring span{position:absolute;left:0;top:0;font-family:var(--mono);font-size:14px;line-height:1;color:var(--fg);
+  transform-origin:center;will-change:transform;white-space:pre}
+#ring span.num{color:var(--fg-2);font-size:12px}
+#swarm{position:absolute;inset:0;width:100%;height:100%}
+.mix-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;
+  font-family:var(--mono-s);font-size:11px;letter-spacing:.32em;color:var(--fg-2);white-space:nowrap;pointer-events:none;
+  background:var(--bg);padding:8px 12px;z-index:2}
+.mix-center b{display:block;margin-top:10px;font-weight:500;letter-spacing:.08em;color:var(--fg)}
+.pct{position:absolute;right:32px;top:50%;transform:translateY(-50%);font-family:var(--sans);font-weight:400;
+  font-size:clamp(44px,5.4vw,76px);line-height:.98;text-align:center;color:var(--fg)}
+.pct span{display:block}
+.pct small{display:block;margin-top:14px;font-family:var(--mono-s);font-size:11px;letter-spacing:.2em;color:var(--fg-2)}
+.mix-note{position:absolute;left:32px;bottom:26px;font-family:var(--mono-s);font-size:11px;color:var(--fg-2);line-height:1.6;max-width:300px}
+.mix-note .tag{color:var(--fg-2)}
+
+@media (max-width:640px){
+  .pct{left:0;right:0;top:64px;transform:none;font-size:44px;display:flex;justify-content:center;align-items:baseline;gap:2px}
+  .pct span{display:inline}
+  .pct small{position:absolute;top:100%;left:0;right:0;margin-top:4px;font-size:9px;letter-spacing:.2em}
+  .mix-center{font-size:10px;letter-spacing:.2em}
+  .mix-note{left:16px;right:16px;bottom:18px}
+  #ring span{font-size:11px}
+  #ring span.num{font-size:9px}
+}
+
+/* ---------- shared ---------- */
+:root[data-theme="dark"] .inv{--bg:var(--paper);--fg:var(--ink);--fg-2:var(--mute);--glass-line:rgba(33,33,33,.16);--glass:rgba(245,244,240,.6)}
+:root[data-theme="light"] .inv{--bg:var(--ink);--fg:var(--paper-2);--fg-2:#A0A0A0;--glass-line:rgba(255,254,251,.16);--glass:rgba(33,33,33,.5)}
+.inv{background:var(--bg);color:var(--fg)}
+.sec{position:relative;padding:120px 32px}
+.wrap{max-width:1280px;margin:0 auto}
+.shead{display:grid;grid-template-columns:150px 1fr 1fr 1.4fr;gap:24px;align-items:start;padding-bottom:28px;border-bottom:1px solid var(--glass-line);margin-bottom:48px;font-family:var(--mono-s);font-size:12px;line-height:1.6}
+.shead .code{display:flex;align-items:center;gap:10px}
+.shead .code:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--fg)}
+.shead h2{font-family:var(--mono);font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.shead .sub{color:var(--fg-2)}
+.shead p{font-size:13px}
+.big{font-weight:600;font-size:clamp(34px,5vw,64px);line-height:1.02;letter-spacing:-.025em}
+.big div{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.st{display:inline-block;font-family:var(--mono-s);font-size:10px;letter-spacing:.08em;border:1px solid currentColor;padding:1px 6px;border-radius:2px;color:var(--fg-2);white-space:nowrap}
+.st.or{color:var(--orange)}
+.js .reveal{opacity:0;transform:translateY(18px);transition:opacity .8s ease,transform .8s ease}
+.js .reveal.in{opacity:1;transform:none}
+
+/* rail */
+.rail{position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:9;display:flex;flex-direction:column;gap:10px;font-family:var(--mono-s);font-size:10px}
+.rail{mix-blend-mode:difference}
+.rail a{color:#fff;opacity:.4;text-decoration:none;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.12em;padding:4px 0}
+.rail a.on{opacity:1}
+.rail{transition:opacity .25s ease}
+.rail.off{opacity:0;pointer-events:none}
+.rail a.on:after{content:" ●"}
+@media (max-width:1100px){.rail{display:none}}
+
+/* anatomy terminal */
+.term{max-width:760px;margin:0 auto;background:var(--paper);color:var(--ink);font-family:var(--mono-s);font-size:12px;line-height:1.6;
+  background-image:linear-gradient(rgba(199,199,163,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(199,199,163,.35) 1px,transparent 1px);background-size:24px 24px;
+  border-radius:4px;padding:18px 20px 22px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.term-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.term-top b{font-weight:500}
+.dotlive{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ink);margin-right:6px;vertical-align:middle}
+.typed{min-height:3.2em;margin-top:12px}
+.typed:after{content:"_";animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.tbar{margin:16px 0 6px;height:10px;border:1px solid var(--ink);border-radius:5px;overflow:hidden}
+.tbar i{display:block;height:100%;width:0;background:var(--ink);border-radius:5px;transition:width .2s linear}
+.tmeta{display:flex;justify-content:space-between;color:var(--mute)}
+.ttable{width:100%;border-collapse:collapse;margin-top:26px}
+.ttable tr{border-top:1px solid var(--ink)}
+.ttable tr:last-child{border-bottom:1px solid var(--ink)}
+.ttable td{padding:9px 8px 9px 0;vertical-align:top}
+.ttable td:first-child{width:118px;color:var(--mute)}
+.ttable td:nth-child(2){width:210px;font-weight:500}
+.ttable td:last-child{text-align:right;width:92px}
+.ttable .st{color:var(--mute)}
+.ttable tr{opacity:.22;transform:translateX(-6px);transition:opacity .4s ease,transform .4s ease}
+.ttable tr.in{opacity:1;transform:none}
+
+/* two kinds of noise */
+.kinds{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--glass-line)}
+.kind{padding:36px 32px 40px 0;border-right:1px solid var(--glass-line)}
+.kind+.kind{padding-left:32px;padding-right:0;border-right:0}
+.kind .k-code{font-family:var(--mono-s);font-size:12px;display:flex;justify-content:space-between;color:var(--fg-2)}
+.kind h3{font-weight:600;font-size:clamp(28px,3.4vw,44px);letter-spacing:-.02em;margin:18px 0 6px}
+.kind .cost{font-family:var(--mono);font-size:13px;margin-bottom:18px}
+.kind p{font-size:15px;line-height:1.6;max-width:520px}
+.kind ul{list-style:none;margin-top:22px;font-family:var(--mono-s);font-size:12px;line-height:1.5}
+.kind li{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-top:1px solid var(--glass-line)}
+.kind li span:last-child{color:var(--fg-2);text-align:right}
+.pkt{margin-top:26px;height:56px;position:relative;overflow:hidden;border:1px solid var(--glass-line)}
+.pkt canvas{width:100%;height:100%;display:block}
+
+/* proof of noise */
+.epoch{margin-top:8px}
+.epoch svg{width:100%;height:auto;display:block;overflow:visible}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:48px;border-top:1px solid var(--glass-line)}
+.step{padding:22px 18px 26px 0;border-right:1px solid var(--glass-line);font-size:14px;line-height:1.55}
+.step+.step{padding-left:18px}
+.step:last-child{border-right:0}
+.step .n{font-family:var(--mono-s);font-size:12px;color:var(--fg-2);display:flex;justify-content:space-between}
+.step h4{font-weight:600;font-size:20px;margin:14px 0 8px;letter-spacing:-.01em}
+.step p{color:var(--fg)}
+.step .mono-s{font-family:var(--mono-s);font-size:12px;color:var(--fg-2);margin-top:10px}
+.v2{margin-top:36px;font-family:var(--mono);font-size:13px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+
+/* map */
+.map{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start}
+.legend{font-family:var(--mono-s);font-size:12px;border:1px solid var(--glass-line);background:var(--glass)}
+.legend button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;width:100%;padding:9px 12px;border-bottom:1px solid var(--glass-line);cursor:pointer}
+.legend button:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
+.legend button[aria-pressed="false"]{opacity:.38}
+.legend .sw{width:14px;height:14px;display:block}
+.legend .all{grid-template-columns:1fr;text-align:center;letter-spacing:.14em;border-bottom:0}
+.legend small{color:var(--fg-2)}
+.map-fig{border:1px solid var(--glass-line);position:relative;isolation:isolate}
+.map-fig:before{content:"";position:absolute;inset:0;z-index:-1;background-image:radial-gradient(var(--glass-line) 1px,transparent 1px);background-size:18px 18px}
+.map-fig svg{width:100%;height:auto;display:block;will-change:transform}
+.map-fig .st{position:absolute;left:12px;top:12px;background:var(--bg)}
+.lay{transition:opacity .4s ease}
+.lay.off{opacity:0}
+.flow{stroke-dasharray:4 6;animation:flow 1.6s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-20}}
+
+/* ascii band */
+.ascii{height:144px;overflow:hidden;user-select:none;line-height:0}
+.ascii canvas{display:block;width:100%;height:100%}
+
+/* status / hud */
+.hud{position:relative;min-height:100svh;overflow:hidden}
+#field{position:absolute;inset:0;width:100%;height:100%}
+.hud-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(8,1fr);grid-auto-rows:minmax(110px,auto);min-height:100svh;
+  background-image:linear-gradient(var(--glass-line) 1px,transparent 1px),linear-gradient(90deg,var(--glass-line) 1px,transparent 1px);background-size:calc(100%/8) 110px}
+.panel{background:color-mix(in srgb,var(--bg) 82%,transparent);font-family:var(--mono-s);font-size:12px;line-height:1.6;padding:14px 16px;border:1px solid var(--glass-line)}
+.panel b{display:block;font-weight:500;font-size:clamp(18px,2.2vw,30px);line-height:1.15;margin:4px 0;letter-spacing:-.01em;font-family:var(--sans)}
+.panel .lab{color:var(--fg-2)}
+.p1{grid-column:2/5;grid-row:2/3}
+.p2{grid-column:6/8;grid-row:2/3}
+.p3{grid-column:3/6;grid-row:4/5}
+.p4{grid-column:6/9;grid-row:5/6}
+.p5{grid-column:2/5;grid-row:6/7}
+.blink{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin-right:6px;animation:blink 1.2s steps(1) infinite}
+
+/* cost calculator */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.ctrl{font-family:var(--mono-s);font-size:12px}
+.ctrl label{display:flex;justify-content:space-between;margin-bottom:10px}
+.ctrl output{font-family:var(--sans);font-weight:600;font-size:clamp(40px,5vw,72px);line-height:1;letter-spacing:-.03em;display:block;margin:6px 0 16px}
+input[type=range]{width:100%;accent-color:var(--orange);height:28px}
+.seg{display:flex;border:1px solid var(--fg);margin-top:26px;width:max-content}
+.seg button{all:unset;cursor:pointer;padding:8px 14px;font-family:var(--mono-s);font-size:12px}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:focus-visible{outline:2px solid var(--orange)}
+.cbar{display:flex;height:42px;margin-top:30px;border:1px solid var(--fg)}
+.cbar .r{background:var(--orange);transition:width .2s}
+.cbar .d{flex:1;background:repeating-linear-gradient(90deg,var(--fg) 0 1px,transparent 1px 4px);opacity:.5}
+.cbar-l{display:flex;justify-content:space-between;font-family:var(--mono-s);font-size:12px;margin-top:8px}
+.out{border-top:1px solid var(--glass-line)}
+.out div{display:flex;justify-content:space-between;align-items:baseline;gap:18px;padding:16px 0;border-bottom:1px solid var(--glass-line)}
+.out span{font-family:var(--mono-s);font-size:12px;color:var(--fg-2);max-width:260px}
+.out b{font-weight:600;font-size:clamp(22px,2.4vw,32px);letter-spacing:-.02em;text-align:right;white-space:nowrap}
+.fine{font-family:var(--mono-s);font-size:12px;line-height:1.6;color:var(--fg-2);margin-top:22px}
+
+/* risks */
+.risks{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--glass-line);border-left:1px solid var(--glass-line)}
+.risk{border-right:1px solid var(--glass-line);border-bottom:1px solid var(--glass-line);padding:18px 18px 22px;display:flex;flex-direction:column;min-height:420px}
+.risk .glyph{font-family:var(--mono);font-size:11px;line-height:1.05;white-space:pre;color:var(--fg-2);margin:18px 0 22px;height:120px;overflow:hidden}
+.risk h3{font-weight:600;font-size:22px;letter-spacing:-.01em;margin-bottom:10px}
+.risk p{font-size:14px;line-height:1.55}
+.risk .fix{margin-top:auto;padding-top:16px;font-family:var(--mono-s);font-size:12px;line-height:1.55}
+.risk .fix span{color:var(--fg-2)}
+.risk .top-r{display:flex;justify-content:space-between;font-family:var(--mono-s);font-size:12px;color:var(--fg-2)}
+
+/* roadmap */
+.road{border-top:1px solid var(--glass-line)}
+.road-row{display:grid;grid-template-columns:120px 1.3fr 2fr 140px 100px;gap:24px;padding:26px 0;border-bottom:1px solid var(--glass-line);align-items:baseline}
+.road-row .v{font-family:var(--mono);font-size:13px}
+.road-row h3{font-weight:600;font-size:clamp(22px,2.4vw,32px);letter-spacing:-.02em}
+.road-row a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+.road-row p a{color:var(--orange)}
+.foot p a{color:var(--fg)}
+.road-row p{font-size:14px;line-height:1.55}
+.road-row .t{font-family:var(--mono);font-size:13px;color:var(--fg-2)}
+.road-row .st,.token-note .st{justify-self:start;align-self:start}
+.token-note{margin-top:40px;display:grid;grid-template-columns:150px 1fr;gap:24px;font-family:var(--mono);font-size:13px;line-height:1.6}
+
+/* outro + footer */
+.outro{min-height:90svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:120px 24px 60px;position:relative;overflow:hidden}
+.outro .big{font-size:clamp(40px,8vw,120px)}
+.outro .big div{justify-content:center}
+.outro .sub{font-family:var(--mono);font-size:13px;color:var(--fg-2);margin-top:22px;line-height:1.8}
+.outro .logo-big{height:72px;width:auto;margin-bottom:46px}
+.foot{padding:28px 32px 34px;border-top:1px solid var(--glass-line);display:grid;grid-template-columns:1fr auto;gap:18px;font-family:var(--mono-s);font-size:12px}
+.foot{align-items:center}
+.social{display:flex;gap:10px;flex-wrap:wrap}
+.social a{position:relative;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--glass-line);border-radius:3px;color:var(--fg);transition:background .2s,color .2s,border-color .2s}
+.social a:hover,.social a:focus-visible{background:var(--fg);color:var(--bg);border-color:var(--fg);outline:none}
+.social a:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;padding:3px 7px;background:var(--fg);color:var(--bg);border-radius:2px;opacity:0;pointer-events:none;transition:opacity .15s}
+.social a:hover:after,.social a:focus-visible:after{opacity:1}
+.foot a{color:var(--fg)}
+.foot .soon{color:var(--fg-2)}
+.foot .soon:after{content:" · soon"}
+.foot p{color:var(--fg-2);grid-column:1/-1;line-height:1.6}
+
+@media (max-width:900px){
+  .shead{grid-template-columns:1fr 1fr;gap:10px 18px}
+  .shead p{grid-column:1/-1}
+  .kinds{grid-template-columns:1fr}
+  .kind,.kind+.kind{padding:30px 0;border-right:0}
+  .kind+.kind{border-top:1px solid var(--glass-line)}
+  .steps{grid-template-columns:1fr 1fr}
+  .step,.step+.step{padding:20px 14px 22px 0;border-right:0;border-bottom:1px solid var(--glass-line)}
+  .map{grid-template-columns:1fr}
+  .calc{grid-template-columns:1fr;gap:36px}
+  .risks{grid-template-columns:1fr 1fr}
+  .road-row{grid-template-columns:70px 1fr auto;gap:8px 16px}
+  .road-row p{grid-column:2/-1}
+  .road-row .t{grid-column:2/3}
+  .hud-grid{grid-template-columns:repeat(4,1fr);background-size:25% 110px}
+  .p1{grid-column:1/4;grid-row:2/3}.p2{grid-column:2/5;grid-row:3/4}.p3{grid-column:1/4;grid-row:5/6}.p4{grid-column:2/5;grid-row:6/7}.p5{grid-column:1/4;grid-row:8/9}
+}
+@media (max-width:640px){
+  .sec{padding:84px 16px}
+  .shead{margin-bottom:32px}
+  .ttable td:first-child{width:auto}
+  .ttable td:nth-child(2){width:auto}
+  .ttable tr{display:grid;grid-template-columns:1fr auto;padding:8px 0}
+  .ttable td{padding:2px 0}
+  .ttable td:nth-child(3){grid-column:1/-1}
+  .ttable td:nth-child(2){grid-column:1/2}
+  .ttable td:first-child{grid-column:1/-1}
+  .ttable td:last-child{grid-row:1;grid-column:2/3}
+  .steps{grid-template-columns:1fr}
+  .risks{grid-template-columns:1fr}
+  .risk{min-height:0}
+  .token-note{grid-template-columns:1fr;gap:8px}
+  .hud-grid{grid-template-columns:repeat(2,1fr);background-size:50% 110px;padding:70px 0 40px}
+  .p1,.p2,.p3,.p4,.p5{grid-column:1/-1;grid-row:auto;margin:0 16px 14px}
+  .map-fig svg>g{font-size:28px}
+  .foot{grid-template-columns:1fr;padding:24px 16px 30px}
+  .outro .logo-big{height:52px}
+  .seg{width:100%}.seg button{flex:1;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){
+  .js .reveal{opacity:1;transform:none;transition:none}
+  .flow,.typed:after,.blink{animation:none}
+  .ttable tr{opacity:1;transform:none}
+}
+
+@media (max-width:640px){
+  .top{padding:14px 16px}
+  .nav a.hide-m{display:none}
+  .nav{gap:10px;white-space:nowrap}
+  .nav a:not(.nav-cta){display:none}
+  .toggle{padding:6px 10px}
+  .card{padding:12px 10px 14px}
+  .lead{font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){ .bar .real{transition:none} }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="mark" href="/" aria-label="zkSI home">
+    <img class="logo-d" src="assets/zksi-lockup-B-dark.svg" alt="zkSI" width="81" height="26">
+    <img class="logo-l" src="assets/zksi-lockup-B-light.svg" alt="zkSI" width="81" height="26">
+  </a>
+  <nav class="nav">
+    <a class="hide-m" href="#how">how it works</a>
+    <a class="hide-m" href="#cost">cost</a>
+    <a class="hide-m" href="#risks">risks</a>
+    <a href="/docs/">docs</a>
+    <a class="nav-cta" href="/lab/">enter lab</a>
+    <button class="toggle" id="theme" type="button" aria-label="Toggle light and dark theme">light / dark</button>
+  </nav>
+</header>
+
+<main>
+<section class="hero" aria-label="zkSI" data-code="01">
+  <div class="fallback" id="fallback" aria-hidden="true"></div>
+  <canvas id="noise" aria-hidden="true"></canvas>
+
+  <div class="card">
+    <i></i><i></i><i></i><i></i>
+    <h1 class="title">
+      <div><span>zkSI<sup>[nz.01]</sup></span><span>noise</span></div>
+      <div><span>private</span><span>SI requests</span></div>
+      <div><span>noise fills</span><span>the gap</span></div>
+    </h1>
+    <p class="lead">Real requests hide inside a fixed volume of traffic. While real users are few, miners fill the rest with decoy requests. As real usage grows, the noise shrinks.</p>
+    <p class="mono">v0.1 · local only. the lab runs in your browser; the network comes next. privacy here has a price: decoy requests cost real inference.</p>
+    <a class="cta hot" href="/lab/">enter lab <span aria-hidden="true">→</span></a>
+
+    <div class="sim" aria-live="off">
+      <div class="sim-head"><span>target 1,000 req/min</span><span class="tag">SIMULATION</span></div>
+      <div class="bar" role="img" aria-label="Real versus decoy traffic"><span class="real" id="realBar" style="width:5%"></span><span class="fill"></span></div>
+      <div class="sim-row"><span>real <b id="real">50</b></span><span>decoy <b id="decoy">950</b></span></div>
+      <div class="formula">miner reward = target - real traffic</div>
+    </div>
+  </div>
+
+  <div class="cue">[ scroll ]</div>
+</section>
+
+<section class="mix" id="how" aria-label="Your request, mixed into decoy traffic" data-code="02">
+  <div class="mix-stage">
+    <canvas id="swarm" aria-hidden="true"></canvas>
+    <div id="ring" aria-hidden="true"></div>
+    <div class="mix-center"><span id="mixState">[ this one is yours ]</span><b id="mixCount">1 real · 0 decoy</b></div>
+    <div class="pct" aria-hidden="true"><span id="d0">0</span><span id="d1">0</span><span id="d2">0</span><span>%</span><small>MIXED</small></div>
+    <p class="mix-note"><span class="tag">ILLUSTRATION</span><br>one real request among 999 decoys. an observer sees 1,000 requests of the same size and rhythm.</p>
+  </div>
+</section>
+
+<!-- 03 anatomy -->
+<section class="sec" id="anatomy" data-code="03">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.03]</span><h2>anatomy</h2><span class="sub">one request, end to end</span>
+      <p>what happens to a single private request on its way to the model, and what each layer is meant to hide. every row carries its status: v0.1 local (runs in the lab today) or planned.</p>
+    </header>
+    <div class="term reveal" id="term">
+      <div class="term-top"><span><span class="dotlive"></span>signal detected / <b>request_0001</b></span><span class="st or">v0.1</span></div>
+      <div class="typed" id="typed"></div>
+      <div class="tbar"><i id="tbar"></i></div>
+      <div class="tmeta"><span id="tstate">waiting</span><span id="tpct">000%</span></div>
+      <table class="ttable" aria-label="Layers of a private request">
+        <tr><td>payment</td><td>zk usage credit</td><td>you pay for requests without linking them to each other or to you</td><td><span class="st">PLANNED</span></td></tr>
+        <tr><td>size</td><td>fixed size classes</td><td>every request is padded to one of a few sizes, so length does not leak</td><td><span class="st or">v0.1 LOCAL</span></td></tr>
+        <tr><td>route</td><td>mixnet, several hops</td><td>network decoys travel with you and are dropped at the last hop</td><td><span class="st">PLANNED</span></td></tr>
+        <tr><td>gateway</td><td>partner gateway, staked</td><td>runs open-source models; real and decoy requests arrive the same way</td><td><span class="st">PLANNED</span></td></tr>
+        <tr><td>endpoint</td><td>decoy prompts</td><td>decoy prompts are generated so the provider has to guess which ones are real</td><td><span class="st or">v0.1 LOCAL</span></td></tr>
+        <tr><td>observer sees</td><td>~1,000 req/min, flat</td><td>a steady volume whether 50 or 900 people are using it</td><td><span class="st or">SIMULATION</span></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 04 two kinds of noise -->
+<section class="sec inv" id="noise-kinds" data-code="04">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.04]</span><h2>two kinds of noise</h2><span class="sub">cheap at the network, expensive at the model</span>
+      <p>noise has to exist at two places. the network layer hides when and from where you send. the endpoint layer hides which prompts are real. only the second one costs real inference.</p>
+    </header>
+    <div class="kinds">
+      <article class="kind reveal">
+        <div class="k-code"><span>NZ.NET</span><span class="st">PLANNED</span></div>
+        <h3>network noise</h3>
+        <div class="cost">cost: low · no inference</div>
+        <p>Fake packets from the client into the mixnet, thrown away at the last node. They protect against a provider that works with the entry node and plays with timing to match requests to people.</p>
+        <div class="pkt"><canvas id="pktNet" aria-hidden="true"></canvas></div>
+        <ul><li><span>where it ends</span><span>last mixnet hop</span></li><li><span>reaches the model</span><span>no</span></li><li><span>who pays</span><span>the sender, cheaply</span></li></ul>
+      </article>
+      <article class="kind reveal">
+        <div class="k-code"><span>NZ.END</span><span class="st or">v0.1 GENERATOR</span></div>
+        <h3>endpoint noise</h3>
+        <div class="cost">cost: ~$0.001-0.005 per decoy on a cheap model · ~10x on a top model</div>
+        <p>Decoy requests that really reach the model, so even the SI provider can not tell which ones came from a person. This is the expensive layer, and it is what the Noise Pool mainly pays for.</p>
+        <div class="pkt"><canvas id="pktEnd" aria-hidden="true"></canvas></div>
+        <ul><li><span>where it ends</span><span>the model</span></li><li><span>reaches the model</span><span>yes</span></li><li><span>who pays</span><span>the Noise Pool, to miners</span></li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 05 proof of noise -->
+<section class="sec" id="proof" data-code="05">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.05]</span><h2>proof of noise</h2><span class="sub">pay for decoys without learning which they are</span>
+      <p>miners commit to a batch before sending it, and a random sample is opened afterwards. one epoch is one hour. commit, sample and open already run in the lab; stake and payouts come with the network.</p>
+    </header>
+    <div class="big reveal" style="margin-bottom:46px"><div><span>commit.</span><span>send.</span></div><div><span>open ~1%.</span><span>pay or slash.</span></div></div>
+    <figure class="epoch reveal" id="epoch" aria-label="One epoch: commit at minute 0, about 1 percent of the batch audited at minute 60"></figure>
+    <div class="steps">
+      <div class="step reveal"><div class="n"><span>01</span><span class="st">PLANNED</span></div><h4>stake</h4><p>The miner locks a stake before taking part.</p><div class="mono-s">e.g. 0.1 ETH</div></div>
+      <div class="step reveal"><div class="n"><span>02</span><span class="st or">v0.1 LOCAL</span></div><h4>commit</h4><p>At the start of each epoch, the miner publishes a hash of the decoy batch it is about to send.</p><div class="mono-s">epoch = 1 hour</div></div>
+      <div class="step reveal"><div class="n"><span>03</span><span class="st or">v0.1 LOCAL</span></div><h4>sample</h4><p>At the end, the hash of a future block picks about 1% of the batch at random.</p><div class="mono-s">no one knows the sample in advance</div></div>
+      <div class="step reveal"><div class="n"><span>04</span><span class="st or">v0.1 LOCAL</span></div><h4>open</h4><p>The miner reveals the sampled decoys. Checked: they were sent (their nullifier shows up at the gateway) and they look credible.</p><div class="mono-s">two checks</div></div>
+      <div class="step reveal"><div class="n"><span>05</span><span class="st">PLANNED</span></div><h4>pay or slash</h4><p>Pass: paid for the whole batch. Fail: the stake is lost.</p><div class="mono-s">from the Noise Pool</div></div>
+    </div>
+    <p class="v2 reveal"><span class="st">PLANNED · v2</span><span>the audit becomes a zk proof: the miner shows that k of the published nullifiers are theirs, without saying which.</span></p>
+  </div>
+</section>
+
+<!-- 06 map -->
+<section class="sec inv" id="map" data-code="06">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.06]</span><h2>the network</h2><span class="sub">who sends what, and where it stops</span>
+      <p>a drawing of the intended design, not a live map. there are no running nodes yet, so this shows roles, not counts.</p>
+    </header>
+    <div class="map reveal">
+      <div class="legend" role="group" aria-label="Map layers">
+        <button type="button" aria-pressed="true" data-lay="real"><span class="sw" style="background:var(--orange)"></span><span>your request</span><small>1</small></button>
+        <button type="button" aria-pressed="true" data-lay="net"><span class="sw" style="background:repeating-linear-gradient(90deg,var(--fg) 0 3px,transparent 3px 6px)"></span><span>network decoys</span><small>dropped</small></button>
+        <button type="button" aria-pressed="true" data-lay="end"><span class="sw" style="border:2px dashed var(--fg)"></span><span>endpoint decoys</span><small>reach model</small></button>
+        <button type="button" aria-pressed="true" data-lay="nodes"><span class="sw" style="border:1px solid var(--fg);border-radius:50%"></span><span>nodes and roles</span><small></small></button>
+        <button type="button" class="all" data-lay="all">REVEAL ALL</button>
+      </div>
+      <div class="map-fig"><span class="st">ILLUSTRATION</span><svg id="mapSvg" viewBox="0 0 1000 560" role="img" aria-label="Clients and miners send traffic through a mixnet to staked gateways and open-source models. Network decoys stop at the last mixnet hop; endpoint decoys reach the model."></svg></div>
+    </div>
+  </div>
+</section>
+
+<div class="ascii" id="ascii1" aria-hidden="true"></div>
+
+<!-- 07 status -->
+<section class="hud" id="status" data-code="07" aria-label="Network status">
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="hud-grid">
+    <div class="panel p1"><span class="lab">[nz.07] network status</span><b><span class="blink"></span>v0.1 · local</b>the lab runs in your browser. miners, gateways and contracts come next.</div>
+    <div class="panel p2"><span class="lab">your local time</span><b id="clock">00:00:00</b><span id="date">----.--.--</span></div>
+    <div class="panel p3"><span class="lab">epoch (simulated)</span><b id="epochLeft">--:--</b>left in the current hour-long epoch, if the network were running</div>
+    <div class="panel p4"><span class="lab">target volume</span><b>1,000 req/min</b>real + decoy, fixed. miner reward = target - real traffic</div>
+    <div class="panel p5"><span class="lab">running today</span><b>0 nodes</b>we will not show node counts until they can be checked on-chain</div>
+  </div>
+</section>
+
+<!-- 08 cost -->
+<section class="sec inv" id="cost" data-code="08">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.08]</span><h2>privacy costs money</h2><span class="sub">move the slider</span>
+      <p>decoys that reach a model cost real inference. this is the honest math at a fixed target of 1,000 requests per minute, using orientative prices from the design.</p>
+    </header>
+    <div class="calc reveal">
+      <div class="ctrl">
+        <label for="realIn"><span>real requests per minute</span><span class="st">ESTIMATE</span></label>
+        <output id="realOut" for="realIn">50</output>
+        <input type="range" id="realIn" min="10" max="1000" step="10" value="50" aria-describedby="calcFine">
+        <div class="cbar" aria-hidden="true"><span class="r" id="cR"></span><span class="d"></span></div>
+        <div class="cbar-l"><span>real <b id="cRl">50</b></span><span>decoy <b id="cDl">950</b></span></div>
+        <div class="seg" role="group" aria-label="Model tier">
+          <button type="button" aria-pressed="true" data-tier="1">cheap model</button>
+          <button type="button" aria-pressed="false" data-tier="10">top model (~10x)</button>
+        </div>
+      </div>
+      <div>
+        <div class="out">
+          <div><span>decoys per minute</span><b id="oD">950</b></div>
+          <div><span>decoy inference per hour</span><b id="oH">$57 - $285</b></div>
+          <div><span>traffic per real request</span><b id="oX">20.0x</b></div>
+          <div><span>miner reward share of the target</span><b id="oM">95%</b></div>
+        </div>
+        <p class="fine" id="calcFine">assumes ~$0.001-0.005 per decoy on a cheap model and ~10x on a top model. at 2 decoys per real request, each real request costs about 3x. the Noise Pool is meant to be funded by a ~20% fee on real requests plus a bootstrap fund; at low usage, the bootstrap fund carries most of the cost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 risks -->
+<section class="sec" id="risks" data-code="09">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.09]</span><h2>known risks</h2><span class="sub">open problems, written down</span>
+      <p>none of these are solved. each one has a planned answer, and each answer still has to be tested.</p>
+    </header>
+    <div class="risks">
+      <article class="risk reveal"><div class="top-r"><span>RK.01</span><span class="st">OPEN</span></div><div class="glyph" data-glyph="0"></div><h3>self-dealing</h3><p>A miner who also runs a gateway could "send" decoys to itself and get paid for nothing.</p><div class="fix"><span>planned answer:</span> decoys go to several gateways at random, and gateways stake too.</div></article>
+      <article class="risk reveal"><div class="top-r"><span>RK.02</span><span class="st">OPEN</span></div><div class="glyph" data-glyph="1"></div><h3>noise detectors</h3><p>A provider can train a model to spot decoys. This becomes an arms race, not a one-time fix.</p><div class="fix"><span>planned answer:</span> the decoy generator copies real conversation patterns and is updated over time.</div></article>
+      <article class="risk reveal"><div class="top-r"><span>RK.03</span><span class="st">OPEN</span></div><div class="glyph" data-glyph="2"></div><h3>provider terms</h3><p>Automated fake traffic to closed SI providers may break their terms of use.</p><div class="fix"><span>planned answer:</span> start on open-source models run by partner gateways.</div></article>
+      <article class="risk reveal"><div class="top-r"><span>RK.04</span><span class="st">OPEN</span></div><div class="glyph" data-glyph="3"></div><h3>cost</h3><p>Endpoint decoys cost real inference. If funding dries up, the noise level drops and so does privacy.</p><div class="fix"><span>planned answer:</span> fee on real requests plus a bootstrap fund, with the cost shown openly.</div></article>
+    </div>
+  </div>
+</section>
+
+<!-- 10 roadmap -->
+<section class="sec inv" id="roadmap" data-code="10">
+  <div class="wrap">
+    <header class="shead reveal">
+      <span class="code">[nz.10]</span><h2>the road</h2><span class="sub">small, testable steps</span>
+      <p>times are estimates for building each step, not dates. nothing starts counting until the previous step works.</p>
+    </header>
+    <div class="road">
+      <div class="road-row reveal"><span class="v">v0.1</span><h3><a href="/lab/">local noise</a></h3><p>Decoy generator, fixed size classes, random timing and a commit you can audit, running in your browser. <a href="/lab/">Try it in the lab.</a> Next: the same logic as an open-source client that sends real requests.</p><span class="t">in progress</span><span class="st or">LIVE · LOCAL</span></div>
+      <div class="road-row reveal"><span class="v">demo</span><h3>what the provider sees</h3><p>Run it for 24 hours and publish the provider's view: a flat line where real requests can not be picked out.</p><span class="t">1 week</span><span class="st">PLANNED</span></div>
+      <div class="road-row reveal"><span class="v">v1</span><h3>noise pool on testnet</h3><p>Contract for stake, commit, random audit and rewards. No zk yet.</p><span class="t">~2 months</span><span class="st">PLANNED</span></div>
+      <div class="road-row reveal"><span class="v">v2</span><h3>zk audits</h3><p>Audits become zero-knowledge proofs, built with a cryptographer on the team.</p><span class="t">3+ months</span><span class="st">PLANNED</span></div>
+    </div>
+    <div class="token-note reveal"><span class="st">$ZKSI</span><span>the zkSI token is $ZKSI, on robinhood chain (launch: 21.10.2026, 5 PM UTC). it does not run anything yet: no miners, no stake, no payouts. the contract address comes only from @0x_zkSI on x. anything else using the zkSI name is not ours.</span></div>
+  </div>
+</section>
+
+<div class="ascii" id="ascii2" aria-hidden="true"></div>
+
+<!-- 11 outro -->
+<section class="outro" id="end" data-code="11">
+  <img class="logo-big logo-d" src="assets/zksi-lockup-B-dark.svg" alt="zkSI" width="224" height="72">
+  <img class="logo-big logo-l" src="assets/zksi-lockup-B-light.svg" alt="zkSI" width="224" height="72">
+  <div class="big"><div><span>transmission</span></div><div><span>complete.</span></div></div>
+  <p class="sub">[nz.11] / end of signal<br>&gt; awaiting next build</p>
+  <a class="cta big-cta" href="/lab/">enter lab <span aria-hidden="true">→</span></a>
+</section>
+</main>
+
+<footer class="foot">
+  <nav class="social" aria-label="zkSI links">
+    <a href="https://x.com/0x_zkSI" target="_blank" rel="noopener noreferrer" aria-label="X @0x_zkSI" data-tip="@0x_zkSI"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="9" y="1" width="1" height="1"/><rect x="10" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/></svg></a>
+    <a href="https://t.me/zkSI0x" target="_blank" rel="noopener noreferrer" aria-label="Telegram zkSI0x" data-tip="t.me/zkSI0x"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="10" y="1" width="1" height="1"/><rect x="11" y="1" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="8" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="7" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/></svg></a>
+    <a href="https://github.com/zkSI0x" target="_blank" rel="noopener noreferrer" aria-label="GitHub zkSI0x" data-tip="github.com/zkSI0x"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="7" y="1" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/></svg></a>
+    <a href="/docs/" aria-label="Docs" data-tip="docs"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="2" y="10" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="5" y="10" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="7" y="10" width="1" height="1"/><rect x="8" y="10" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/></svg></a>
+    <a href="mailto:contact@zksi.io" aria-label="Email contact@zksi.io" data-tip="contact@zksi.io"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="11" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="11" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="11" y="6" width="1" height="1"/><rect x="0" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="11" y="7" width="1" height="1"/><rect x="0" y="8" width="1" height="1"/><rect x="11" y="8" width="1" height="1"/><rect x="0" y="9" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="3" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="8" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="11" y="9" width="1" height="1"/></svg></a>
+  </nav>
+  <span>© 2026 zkSI</span>
+  <p>zkSI v0.1 runs locally in your browser in the <a href="/lab/">lab</a>; the network comes next. the only zkSI token is $ZKSI, on robinhood chain; its contract address comes only from @0x_zkSI. no one from zkSI will ever ask you for keys, seed phrases or money.</p>
+</footer>
+
+<nav class="rail" id="rail" aria-label="Sections"></nav>
+
+<script src="main.js?v=4" defer></script>
+</body>
+</html>

@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zkSI | Docs</title>
+<meta name="description" content="How zkSI is meant to work: noise mining for private SI requests, the two kinds of noise, and what each party can see. v0.1 · local only: the lab runs today in your browser; the network comes next.">
+<meta name="theme-color" content="#212121">
+<link rel="icon" type="image/svg+xml" href="/assets/zksi-mark-B-light.svg" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/svg+xml" href="/assets/zksi-mark-B-dark.svg" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="zkSI | Docs">
+<meta property="og:description" content="How zkSI is meant to work, and what it can not hide. v0.1 · local only: the lab runs today in your browser; the network comes next.">
+<meta property="og:image" content="https://zksi.io/assets/og.jpg">
+<meta property="og:url" content="https://zksi.io/docs/">
+<link rel="canonical" href="https://zksi.io/docs/">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+
+:root{
+  --ink:#212121; --paper:#F5F4F0; --paper-2:#FFFEFB; --mute:#6C6C70;
+  --olive:#C7C7A3; --lime:#EBFF79; --orange:#E45E3F;
+  --bg:var(--paper); --fg:var(--ink); --fg-2:var(--mute);
+  --glass:rgba(245,244,240,.42); --glass-line:rgba(33,33,33,.14); --dot:var(--ink);
+  --sans:Inter,system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:var(--ink); --fg:var(--paper-2); --fg-2:#A0A0A0;
+    --glass:rgba(33,33,33,.38); --glass-line:rgba(255,254,251,.14); --dot:var(--paper-2);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:var(--ink); --fg:var(--paper-2); --fg-2:#A0A0A0;
+  --glass:rgba(33,33,33,.38); --glass-line:rgba(255,254,251,.14); --dot:var(--paper-2);
+}
+:root[data-theme="dark"] .inv{--bg:var(--paper);--fg:var(--ink);--fg-2:var(--mute);--glass-line:rgba(33,33,33,.16);--glass:rgba(245,244,240,.6)}
+:root[data-theme="light"] .inv{--bg:var(--ink);--fg:var(--paper-2);--fg-2:#A0A0A0;--glass-line:rgba(255,254,251,.16);--glass:rgba(33,33,33,.5)}
+.inv{background:var(--bg);color:var(--fg)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--fg)}
+html{scroll-padding-top:84px}
+body{font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+
+/* header (same as site) */
+.top{position:fixed;inset:0 0 auto 0;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px;font-family:var(--mono);font-size:12px;letter-spacing:.02em;
+  transition:background .3s ease,border-color .3s ease;border-bottom:1px solid transparent}
+.top.solid{background:color-mix(in srgb,var(--bg) 94%,transparent);border-bottom-color:var(--glass-line)}
+.mark{display:flex;align-items:center;line-height:0}
+.mark img{height:26px;width:auto}
+.logo-l{display:none}
+:root[data-theme="light"] .logo-l{display:block}
+:root[data-theme="light"] .logo-d{display:none}
+.nav{display:flex;gap:22px;align-items:center}
+.nav a{color:var(--fg);text-decoration:none;opacity:.8}
+.nav a:hover{opacity:1}
+.nav .cur{opacity:1}
+.nav .cur:before{content:"● ";color:var(--orange)}
+.toggle{font:inherit;color:var(--fg);background:none;border:1px solid var(--glass-line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.prog{position:fixed;left:0;top:0;height:2px;width:0;background:var(--orange);z-index:11}
+
+/* hero */
+.dhero{position:relative;height:66svh;min-height:500px;display:grid;place-items:center;overflow:hidden}
+#dfield{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
+.card{position:relative;z-index:2;width:min(460px,calc(100% - 32px));padding:14px 12px 16px;
+  background:var(--glass);backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1)}
+.card i{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--dot)}
+.card i:nth-child(1){left:-4px;top:-4px}.card i:nth-child(2){right:-4px;top:-4px}
+.card i:nth-child(3){left:-4px;bottom:-4px}.card i:nth-child(4){right:-4px;bottom:-4px}
+.title{font-weight:600;font-size:clamp(34px,4.6vw,46px);line-height:1.02;letter-spacing:-.02em}
+.title div{display:flex;justify-content:space-between;gap:12px}
+.title sup{font-size:.38em;font-weight:600;vertical-align:top;position:relative;top:.25em;margin-left:2px}
+.lead{margin-top:14px;font-size:13px;line-height:1.55;font-weight:500}
+.hmeta{margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--fg-2);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;font-family:var(--mono);font-size:11px;letter-spacing:.3em;opacity:.75}
+
+/* layout */
+.dwrap{max-width:1280px;margin:0 auto;padding:0 32px 40px;display:grid;grid-template-columns:210px minmax(0,1fr);gap:64px}
+.toc{position:sticky;top:96px;align-self:start;font-family:var(--mono);font-size:12px;padding-top:64px}
+.toc .lab{color:var(--fg-2);margin-bottom:14px;display:block}
+.toc ol{list-style:none;border-left:1px solid var(--glass-line)}
+.toc li a,.toc li span{display:flex;gap:10px;padding:5px 0 5px 14px;text-decoration:none;opacity:.6;position:relative}
+.toc li a:hover{opacity:1}
+.toc li a.on{opacity:1}
+.toc li a.on:before{content:"";position:absolute;left:-4px;top:50%;width:7px;height:7px;border-radius:50%;background:var(--orange);transform:translateY(-50%)}
+.toc li span{opacity:.3}
+.toc li span:after{content:"soon";margin-left:auto}
+.toc b{font-weight:400;color:var(--fg-2)}
+.legend{margin-top:28px;border-top:1px solid var(--glass-line);padding-top:14px;color:var(--fg-2);line-height:1.6}
+
+.doc{min-width:0;max-width:880px}
+.dsec{padding:96px 0 24px;border-bottom:1px solid var(--glass-line)}
+.dsec:last-child{border-bottom:0}
+.dsec:first-child{padding-top:64px}
+.dh{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+.dh:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--fg)}
+.dsec h2{font-weight:600;font-size:clamp(32px,4.2vw,54px);line-height:1.02;letter-spacing:-.025em;margin:14px 0 30px}
+.dsec h3{font-family:var(--mono);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:44px 0 14px}
+.dsec p{font-size:16px;line-height:1.7;max-width:680px;margin-bottom:18px}
+.dsec p strong{font-weight:600}
+.callout{border:1px solid var(--glass-line);padding:18px 20px;font-family:var(--mono);font-size:13px;line-height:1.7;margin:0 0 30px;position:relative}
+.callout:before{content:"";position:absolute;left:-1px;top:-1px;bottom:-1px;width:3px;background:var(--orange)}
+.how{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--glass-line);margin:6px 0 10px}
+.how div{padding:14px 14px 16px;border-right:1px solid var(--glass-line);font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--fg-2)}
+.how div:last-child{border-right:0}
+.how .lb{margin-bottom:8px}
+
+/* labels */
+.lb{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:400;letter-spacing:.08em;border:1px solid currentColor;padding:1px 6px;border-radius:2px;color:var(--fg-2);white-space:nowrap;vertical-align:2px;line-height:1.5}
+.lb.v{color:var(--orange)}
+.lb.d{color:var(--fg)}
+.lb.live{color:var(--bg);background:var(--fg);border-color:var(--fg)}
+
+/* figures */
+.fig{margin:30px 0 34px;border:1px solid var(--glass-line);position:relative;isolation:isolate}
+.fig:before{content:"";position:absolute;inset:0;z-index:-1;background-image:radial-gradient(var(--glass-line) 1px,transparent 1px);background-size:18px 18px}
+.fig.inv:before{opacity:.7}
+.fbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--glass-line);font-family:var(--mono);font-size:11px;color:var(--fg-2)}
+.fbar b{font-weight:500;color:var(--fg)}
+.fcap{padding:10px 14px 12px;border-top:1px solid var(--glass-line);font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--fg-2)}
+.fbody{padding:16px}
+canvas.cv{display:block;width:100%}
+.seg{display:inline-flex;border:1px solid var(--fg);flex-wrap:wrap}
+.seg button{all:unset;cursor:pointer;padding:6px 11px;font-family:var(--mono);font-size:11px;color:var(--fg)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:focus-visible,.tgl:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.tgl{all:unset;cursor:pointer;font-family:var(--mono);font-size:11px;border:1px solid var(--glass-line);padding:6px 11px;color:var(--fg)}
+.tgl[aria-pressed="true"]{border-color:var(--orange);color:var(--orange)}
+.read{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--glass-line)}
+.read div{padding:12px 14px;border-right:1px solid var(--glass-line);font-family:var(--mono);font-size:11px;color:var(--fg-2)}
+.read div:last-child{border-right:0}
+.read b{display:block;font-family:var(--sans);font-weight:600;font-size:clamp(22px,2.6vw,32px);letter-spacing:-.02em;color:var(--fg);margin-top:4px;font-variant-numeric:tabular-nums}
+.read b.or{color:var(--orange)}
+.read b.sm{font-size:clamp(16px,1.9vw,24px);white-space:nowrap;line-height:1.5}
+
+/* crowd */
+#crowd{aspect-ratio:16/7}
+.crowd-say{display:inline-block;margin:0 14px 14px;font-family:var(--mono);font-size:12px;background:var(--bg);padding:6px 10px;border:1px solid var(--glass-line)}
+.crowd-say b{font-weight:500}
+
+/* grid */
+.gctl{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 14px 0}
+.gctl label{font-family:var(--mono);font-size:11px;color:var(--fg-2)}
+input[type=range]{flex:1;min-width:180px;accent-color:var(--orange);height:28px}
+#grid{aspect-ratio:40/25}
+
+/* tables */
+.dt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;line-height:1.55;margin:10px 0 26px}
+.dt th{font-weight:500;text-align:left;color:var(--fg-2);padding:10px 12px 10px 0;border-bottom:1px solid var(--fg)}
+.dt td{padding:11px 12px 11px 0;border-bottom:1px solid var(--glass-line);vertical-align:top}
+.dt td:first-child{font-weight:500}
+.dt tr.hl td{color:var(--orange)}
+.dt.click tbody tr{cursor:pointer}
+.dt.click tbody tr:hover td{background:color-mix(in srgb,var(--fg) 5%,transparent)}
+.tscroll{overflow-x:auto}
+
+/* timeline */
+#tl{display:block;width:100%;height:auto;overflow:visible}
+
+/* pipeline */
+#pipe{aspect-ratio:16/7}
+.pctl{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;padding:12px 14px;border-bottom:1px solid var(--glass-line)}
+
+/* lens */
+.parties{display:flex;flex-wrap:wrap;gap:6px;padding:14px;border-bottom:1px solid var(--glass-line)}
+.parties button{all:unset;cursor:pointer;font-family:var(--mono);font-size:11px;padding:6px 10px;border:1px solid var(--glass-line);display:flex;gap:8px;align-items:center}
+.parties button i{width:7px;height:7px;border-radius:50%;border:1px solid currentColor}
+.parties button[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+.parties button[aria-pressed="true"] i{background:var(--orange);border-color:var(--orange)}
+.parties button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.lens{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.lpath{grid-column:1/-1;padding:14px 14px 4px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--fg-2)}
+.lpath span{padding:3px 7px;border:1px solid var(--glass-line)}
+.lpath span.on{border-color:var(--orange);color:var(--orange)}
+.lpath em{font-style:normal;opacity:.6}
+.feed{list-style:none;font-family:var(--mono);font-size:12px;line-height:1.5;padding:12px 14px 14px;height:298px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;border-right:1px solid var(--glass-line);
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30%);mask-image:linear-gradient(to bottom,transparent,#000 30%)}
+.feed li{padding:4px 0;border-bottom:1px dashed var(--glass-line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:fin .35s ease}
+.feed li .q{color:var(--fg-2)}
+.feed li.truth{color:var(--orange)}
+.feed li .t{display:inline-block;width:62px;color:var(--fg-2)}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}}
+.lside{padding:14px;font-size:14px;line-height:1.55}
+.lside .k{font-family:var(--mono);font-size:11px;color:var(--fg-2);margin:0 0 4px;display:block}
+.lside p{font-size:14px;margin-bottom:16px}
+.lside h4{font-weight:600;font-size:22px;letter-spacing:-.01em;margin-bottom:14px}
+
+/* leak demo */
+.leak{padding:22px 18px 18px}
+.pcard{font-family:var(--mono);font-size:14px;line-height:1.7;border:1px solid var(--glass-line);background:var(--bg);padding:16px 18px;min-height:100px;position:relative}
+.pcard .who{display:block;font-size:11px;color:var(--fg-2);margin-bottom:6px}
+.pcard mark{background:none;color:inherit;transition:background .4s ease,color .4s ease;padding:0 1px}
+.pcard mark.on{background:var(--orange);color:var(--paper-2)}
+.pcard .caret:after{content:"_";animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.verdict{margin-top:12px;font-family:var(--mono);font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:20px;opacity:0;transition:opacity .4s ease}
+.verdict.in{opacity:1}
+.verdict .bad{color:var(--orange)}
+
+.dsec p.next{margin:40px 0 0;font-family:var(--mono);font-size:12px;color:var(--fg-2);line-height:1.7}
+
+/* footer (same as site) */
+.foot{padding:28px 32px 34px;border-top:1px solid var(--glass-line);display:grid;grid-template-columns:1fr auto;gap:18px;font-family:var(--mono);font-size:12px}
+.foot{align-items:center}
+.social{display:flex;gap:10px;flex-wrap:wrap}
+.social a{position:relative;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--glass-line);border-radius:3px;color:var(--fg);transition:background .2s,color .2s,border-color .2s}
+.social a:hover,.social a:focus-visible{background:var(--fg);color:var(--bg);border-color:var(--fg);outline:none}
+.social a:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;padding:3px 7px;background:var(--fg);color:var(--bg);border-radius:2px;opacity:0;pointer-events:none;transition:opacity .15s}
+.social a:hover:after,.social a:focus-visible:after{opacity:1}
+.foot a{color:var(--fg)}
+.foot .soon{color:var(--fg-2)}
+.foot .soon:after{content:" · soon"}
+.foot p{color:var(--fg-2);grid-column:1/-1;line-height:1.6}
+.foot p a{color:var(--fg)}
+
+.js .reveal{opacity:0;transform:translateY(18px);transition:opacity .8s ease,transform .8s ease}
+.js .reveal.in{opacity:1;transform:none}
+
+@media (max-width:980px){
+  .dwrap{grid-template-columns:1fr;gap:0}
+  .toc{position:static;padding-top:48px}
+  .toc ol{columns:2;column-gap:18px}
+  .toc li{break-inside:avoid}
+  .legend{display:none}
+  .dsec{padding-top:72px}
+}
+@media (max-width:640px){
+  .top{padding:14px 16px}
+  .nav{gap:14px}
+  .nav .hide-m{display:none}
+  .dwrap{padding:0 16px 30px}
+  .toc ol{columns:1}
+  .how{grid-template-columns:1fr 1fr}
+  .how div:nth-child(2){border-right:0}
+  .how div{border-bottom:1px solid var(--glass-line)}
+  .how div:nth-child(2n){border-right:0}
+  .how div:last-child{grid-column:1/-1;border-bottom:0}
+  .read{grid-template-columns:1fr 1fr}
+  .read div:nth-child(2){border-right:0}
+  .read div:nth-child(-n+2){border-bottom:1px solid var(--glass-line)}
+  #crowd{aspect-ratio:4/3}
+  #pipe{aspect-ratio:3/4}
+  .lens{grid-template-columns:1fr}
+  .feed{border-right:0;border-bottom:1px solid var(--glass-line);height:250px;font-size:11px}
+  .feed li .t{width:52px}
+  .dsec p{font-size:15px}
+  .foot{grid-template-columns:1fr;padding:24px 16px 30px}
+  .crowd-say{font-size:11px}
+}
+@media (prefers-reduced-motion:reduce){
+  .js .reveal{opacity:1;transform:none;transition:none}
+  .feed li{animation:none}
+  .pcard .caret:after{animation:none}
+}
+
+/* ---------- v2: sections 05-14 ---------- */
+.dsec a{text-underline-offset:3px}
+.dlist{list-style:none;max-width:680px;margin:0 0 22px;border-top:1px solid var(--glass-line)}
+.dlist li{font-size:15px;line-height:1.6;padding:10px 0 10px 22px;border-bottom:1px solid var(--glass-line);position:relative}
+.dlist li:before{content:"";position:absolute;left:2px;top:19px;width:7px;height:7px;background:var(--fg)}
+.dlist.num{counter-reset:n}
+.dlist.num li{counter-increment:n;padding-left:34px}
+.dlist.num li:before{content:counter(n,decimal-leading-zero);width:auto;height:auto;background:none;top:11px;font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+
+/* threat map */
+#amap{aspect-ratio:16/6.4}
+.adv{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--glass-line)}
+.adv div{padding:12px 14px;border-right:1px solid var(--glass-line);font-size:14px;line-height:1.5}
+.adv div:last-child{border-right:0}
+.adv .k{display:block;font-family:var(--mono);font-size:11px;color:var(--fg-2);margin-bottom:4px}
+
+/* proof of noise */
+.steps5{list-style:none;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--glass-line);margin:6px 0 10px;counter-reset:s}
+.steps5 li{counter-increment:s;padding:16px 14px 18px 0;border-right:1px solid var(--glass-line);font-size:14px;line-height:1.55}
+.steps5 li+li{padding-left:14px}
+.steps5 li:last-child{border-right:0}
+.steps5 li:before{content:counter(s,decimal-leading-zero);display:block;font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+.steps5 b{display:block;font-weight:600;font-size:18px;margin:10px 0 6px;letter-spacing:-.01em}
+.ep-head{display:flex;justify-content:space-between;gap:12px;padding:12px 16px 0;font-family:var(--mono);font-size:12px}
+.ep-head span:first-child{text-transform:uppercase;letter-spacing:.08em}
+.ep-head span:last-child{color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+#audit{aspect-ratio:40/25}
+.ep-res{padding:0 16px 14px;font-family:var(--mono);font-size:13px;min-height:1.6em}
+.ep-res .bad{color:var(--orange)}
+
+/* pool + cost */
+#pool{aspect-ratio:16/6.5}
+#stack{aspect-ratio:16/3.6}
+
+/* crypto */
+.crypt{padding:16px;font-family:var(--mono);font-size:12px;line-height:1.6;min-height:330px}
+.crypt .row{display:grid;grid-template-columns:28px minmax(0,1.1fr) minmax(0,1fr);gap:10px;padding:5px 6px;border-bottom:1px dashed var(--glass-line);transition:background .3s ease}
+.crypt .row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crypt .row .h{color:var(--fg-2)}
+.crypt .row.pick{background:color-mix(in srgb,var(--orange) 16%,transparent)}
+.crypt .row.pick .i{color:var(--orange)}
+.crypt .out{margin-top:14px;display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 12px}
+.crypt .out span:nth-child(odd){color:var(--fg-2)}
+.crypt .out code{font:inherit;word-break:break-all}
+.crypt .ok{color:var(--fg)}
+.crypt .no{color:var(--orange)}
+.crypt .typing:after{content:"_";animation:blink 1s steps(1) infinite}
+.code{font-family:var(--mono);font-size:12px;line-height:1.65;border:1px solid var(--glass-line);background:color-mix(in srgb,var(--fg) 4%,transparent);padding:16px 18px;overflow-x:auto;margin:0 0 26px;white-space:pre}
+
+/* verification */
+.netlog{font-family:var(--mono);font-size:12px;line-height:1.5;padding:12px 14px;max-height:260px;overflow:auto}
+.netlog .ln{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:12px;padding:3px 0;border-bottom:1px dashed var(--glass-line);animation:fin .35s ease}
+.netlog .ln span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.netlog .ln span:first-child,.netlog .ln span:last-child{color:var(--fg-2)}
+.netlog .sum{padding-top:10px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.netlog .sum b{font-weight:500}
+
+/* risks */
+.rgrid{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--glass-line);border-left:1px solid var(--glass-line);margin:10px 0 30px}
+.rcard{border-right:1px solid var(--glass-line);border-bottom:1px solid var(--glass-line);padding:14px 14px 16px;display:flex;flex-direction:column}
+.rtop{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+.rcv{display:block;width:100%;height:96px;margin:14px 0 16px}
+.rcard h4{font-weight:600;font-size:19px;letter-spacing:-.01em;margin-bottom:8px}
+.rcard p{font-size:14px;line-height:1.55;margin:0}
+.rcard p.fix{margin-top:auto;padding-top:14px;font-family:var(--mono);font-size:12px}
+.rcard p.fix span:first-child{color:var(--fg-2)}
+
+/* roadmap */
+.track{position:relative;margin:10px 0 30px}
+.tk-line{position:absolute;left:0;right:0;top:9px;height:2px;background:var(--glass-line)}
+.tk-line i{display:block;height:100%;width:0;background:var(--orange);transition:width 1.6s ease}
+.tk-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.tk{position:relative;padding-top:34px}
+.tk:before{content:"";position:absolute;left:0;top:3px;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--fg);background:var(--bg)}
+.tk.now:before{background:var(--orange);border-color:var(--orange);box-shadow:0 0 0 0 color-mix(in srgb,var(--orange) 60%,transparent);animation:pulse 2s ease-out infinite}
+@keyframes pulse{to{box-shadow:0 0 0 12px transparent}}
+.tk .v{font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+.tk h4{font-weight:600;font-size:20px;letter-spacing:-.01em;margin:6px 0 8px}
+.tk p{font-size:14px;line-height:1.55;margin-bottom:8px}
+.tk .t{font-family:var(--mono);font-size:12px;color:var(--fg-2)}
+
+/* disclosure */
+.mailbox{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px 16px;align-items:center;border:1px solid var(--glass-line);padding:16px 18px;margin:0 0 28px;max-width:680px}
+.mailbox .k{font-family:var(--mono);font-size:11px;color:var(--fg-2)}
+.mailbox code{font-family:var(--mono);font-size:15px;user-select:all;overflow-wrap:anywhere}
+.mailbox code:last-child{grid-column:2/-1;font-size:13px}
+
+/* faq */
+.faq{border-top:1px solid var(--glass-line);max-width:760px}
+.faq details{border-bottom:1px solid var(--glass-line)}
+.faq summary{list-style:none;cursor:pointer;padding:16px 36px 16px 0;font-weight:600;font-size:17px;letter-spacing:-.01em;position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:"+";position:absolute;right:4px;top:14px;font-family:var(--mono);font-weight:400;font-size:18px;transition:transform .3s ease}
+.faq details[open] summary:after{transform:rotate(45deg);color:var(--orange)}
+.faq summary:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.faq details p{font-size:15px;line-height:1.65;margin:0 0 18px;max-width:680px}
+.faq details[open] p{animation:fin .35s ease}
+
+@media (max-width:980px){
+  .steps5{grid-template-columns:1fr 1fr}
+  .steps5 li,.steps5 li+li{padding:14px 12px 16px 0;border-right:0;border-bottom:1px solid var(--glass-line)}
+  .rgrid{grid-template-columns:1fr 1fr}
+  .tk-row{grid-template-columns:1fr 1fr;row-gap:30px}
+  .tk-line{display:none}
+}
+@media (max-width:640px){
+  #amap{aspect-ratio:4/4.2}
+  .adv{grid-template-columns:1fr}
+  .adv div{border-right:0;border-bottom:1px solid var(--glass-line)}
+  .adv div:last-child{border-bottom:0}
+  .steps5{grid-template-columns:1fr}
+  #pool{aspect-ratio:4/4.4}
+  #stack{aspect-ratio:4/2.2}
+  .crypt{font-size:11px;padding:12px}
+  .crypt .row{grid-template-columns:22px minmax(0,1fr);}
+  .crypt .row .h{grid-column:2}
+  .crypt .out{grid-template-columns:1fr}
+  .rgrid{grid-template-columns:1fr}
+  .tk-row{grid-template-columns:1fr}
+  .mailbox{grid-template-columns:1fr auto}
+  .mailbox .k{grid-column:1/-1}
+  .mailbox code:last-child{grid-column:1/-1}
+  .netlog .ln{grid-template-columns:52px minmax(0,1fr)}
+  .netlog .ln span:last-child{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .tk.now:before{animation:none}
+  .tk-line i{transition:none}
+  .netlog .ln,.faq details[open] p{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="prog" id="prog" aria-hidden="true"></div>
+<header class="top">
+  <a class="mark" href="/" aria-label="zkSI home">
+    <img class="logo-d" src="/assets/zksi-lockup-B-dark.svg" alt="zkSI" width="81" height="26">
+    <img class="logo-l" src="/assets/zksi-lockup-B-light.svg" alt="zkSI" width="81" height="26">
+  </a>
+  <nav class="nav">
+    <a class="hide-m" href="/">home</a>
+    <a href="/lab/">lab</a>
+    <span class="cur">docs</span>
+    <button class="toggle" id="theme" type="button" aria-label="Toggle light and dark theme">light / dark</button>
+  </nav>
+</header>
+
+<section class="dhero" aria-label="zkSI docs">
+  <canvas id="dfield" aria-hidden="true"></canvas>
+  <div class="card">
+    <i></i><i></i><i></i><i></i>
+    <h1 class="title">
+      <div><span>zkSI<sup>[docs]</sup></span><span>v0.1</span></div>
+      <div><span>how it</span><span>works,</span></div>
+      <div><span>what it</span><span>can't hide</span></div>
+    </h1>
+    <p class="lead">v0.1 · local only. The lab runs today in your browser; the network comes next. Every claim carries its status, so you always know what runs today, what is planned and what is still open.</p>
+    <div class="hmeta"><span>status: v0.1 · local only</span><span>updated 2026.10.17</span></div>
+  </div>
+  <div class="cue">[ read ]</div>
+</section>
+
+<div class="dwrap">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <span class="lab">on this page</span>
+    <ol>
+      <li><a href="#overview"><b>01</b> overview</a></li>
+      <li><a href="#how-it-works"><b>02</b> how it works</a></li>
+      <li><a href="#two-kinds"><b>03</b> two kinds of noise</a></li>
+      <li><a href="#who-sees-what"><b>04</b> what each party sees</a></li>
+      <li><a href="#threat-model"><b>05</b> threat model</a></li>
+      <li><a href="#proof-of-noise"><b>06</b> proof of noise</a></li>
+      <li><a href="#noise-pool"><b>07</b> noise pool</a></li>
+      <li><a href="#cost"><b>08</b> cost of privacy</a></li>
+      <li><a href="#cryptography"><b>09</b> cryptography</a></li>
+      <li><a href="#verification"><b>10</b> verification</a></li>
+      <li><a href="#risks"><b>11</b> risks and limits</a></li>
+      <li><a href="#roadmap"><b>12</b> roadmap</a></li>
+      <li><a href="#disclosure"><b>13</b> disclosure</a></li>
+      <li><a href="#faq"><b>14</b> faq</a></li>
+    </ol>
+    <div class="legend">figures are marked ILLUSTRATION, SIMULATION or ESTIMATE. two are marked RUNS IN THIS PAGE: 09 computes real SHA-256 hashes and 10 lists the requests this page made, both in your browser.</div>
+  </nav>
+
+  <article class="doc">
+
+    <!-- 01 -->
+    <section class="dsec" id="overview">
+      <div class="dh reveal">[01] overview</div>
+      <h2 class="reveal">A crowd you can hide in, from day one.</h2>
+
+      <div class="callout reveal"><span class="lb live">v0.1 · LOCAL ONLY</span><br>The <a href="/lab/">Noise Lab</a> runs today in your browser; the network comes next. There are no miners, gateways, network contracts or nodes yet. The $ZKSI token exists on Robinhood Chain, but it does not run anything in the network.</div>
+
+      <div class="how reveal" aria-label="How to read these docs">
+        <div><span class="lb live">v0.1 LOCAL</span><br>runs today in the lab, only in your browser</div>
+        <div><span class="lb d">DECIDED</span><br>agreed; changes are announced</div>
+        <div><span class="lb">PLANNED</span><br>on the road, not built yet</div>
+        <div><span class="lb v">[VERIFY]</span><br>open question or not checked yet</div>
+      </div>
+
+      <p class="reveal" style="margin-top:30px">zkSI is <strong>noise mining</strong> for private SI requests.</p>
+      <p class="reveal">A fixed volume of traffic hides the real requests. When real traffic is low, miners fill the gap with decoy requests. When real traffic grows, the decoys shrink. <span class="lb">PLANNED</span></p>
+      <p class="reveal">The problem it targets: a private network is only as private as its crowd. With 50 users, there is no crowd. zkSI pays for the crowd until real users replace it. <span class="lb">PLANNED</span></p>
+
+      <figure class="fig reveal" aria-label="Fifty requests alone versus fifty requests among 950 decoys">
+        <div class="fbar"><b>the crowd problem</b><span class="seg" role="group" aria-label="Noise"><button type="button" aria-pressed="true" data-n="0">noise off</button><button type="button" aria-pressed="false" data-n="1">noise on</button></span></div>
+        <canvas class="cv" id="crowd" aria-hidden="true"></canvas>
+        <div class="crowd-say" id="crowdSay" aria-live="polite"><b>noise off</b> · 50 requests · each one is a person</div>
+        <figcaption class="fcap"><span class="lb">ILLUSTRATION</span> &nbsp;orange = a real person. with noise on, an observer sees 1,000 requests that look the same.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 02 -->
+    <section class="dsec" id="how-it-works">
+      <div class="dh reveal">[02] how it works</div>
+      <h2 class="reveal">A fixed target. Miners fill the gap.</h2>
+      <p class="reveal">The network aims for a fixed target volume, for example 1,000 requests per minute. The real value is not decided. <span class="lb">PLANNED</span></p>
+      <p class="reveal">Miners deliver the difference between the target and real traffic, and are paid for that volume. <span class="lb">PLANNED</span></p>
+
+      <figure class="fig reveal" aria-label="1,000 slots per minute split between real requests and decoys">
+        <div class="fbar"><b>one minute of traffic · 1,000 slots</b><button type="button" class="tgl" id="obs" aria-pressed="false">observer view</button></div>
+        <div class="gctl">
+          <label for="rIn">real requests / min</label>
+          <input type="range" id="rIn" min="0" max="1000" step="10" value="50">
+          <span class="seg" role="group" aria-label="Presets"><button type="button" data-r="50" aria-pressed="true">50</button><button type="button" data-r="500" aria-pressed="false">500</button><button type="button" data-r="900" aria-pressed="false">900</button></span>
+        </div>
+        <div class="fbody"><canvas class="cv" id="grid" aria-hidden="true"></canvas></div>
+        <div class="read" aria-live="polite">
+          <div>real<b class="or" id="gR">50</b></div>
+          <div>decoys from miners<b id="gD">950</b></div>
+          <div>noise share<b id="gS">95%</b></div>
+          <div>miners paid for<b id="gM">950</b></div>
+        </div>
+        <figcaption class="fcap"><span class="lb">SIMULATION</span> &nbsp;target 1,000 is an example. miners are paid for target minus real. turn on observer view to see what anyone watching the traffic sees.</figcaption>
+      </figure>
+
+      <div class="tscroll reveal">
+      <table class="dt click" id="gTable">
+        <thead><tr><th>real requests / min</th><th>decoys from miners</th><th>noise share</th></tr></thead>
+        <tbody>
+          <tr data-r="50" class="hl"><td>50</td><td>950</td><td>95%</td></tr>
+          <tr data-r="500"><td>500</td><td>500</td><td>50%</td></tr>
+          <tr data-r="900"><td>900</td><td>100</td><td>10%</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <p class="reveal">Noise matters most at the start and falls on its own as the network grows. What happens when real traffic goes above the target is not decided. <span class="lb v">[VERIFY]</span></p>
+
+      <figure class="fig reveal" aria-label="As real traffic grows from 50 to 900, decoys shrink and the total stays at 1,000">
+        <div class="fbar"><b>as the network grows</b><span id="tlRead">real 50 · decoys 950</span></div>
+        <div class="fbody"><svg id="tl" viewBox="0 0 800 300" aria-hidden="true"></svg></div>
+        <figcaption class="fcap"><span class="lb">ILLUSTRATION</span> &nbsp;the shape of the idea, not a forecast. the line on top is the only thing an observer sees: flat.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 03 -->
+    <section class="dsec" id="two-kinds">
+      <div class="dh reveal">[03] two kinds of noise</div>
+      <h2 class="reveal">Cheap at the network. Expensive at the model.</h2>
+
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th></th><th>NZ.NET · network noise</th><th>NZ.END · endpoint noise</th></tr></thead>
+        <tbody>
+          <tr><td>what it is</td><td>Fake packets from client into the mixnet</td><td>Decoy requests that reach the model</td></tr>
+          <tr><td>where it ends</td><td>Dropped at the last node</td><td>Answered by the SI provider</td></tr>
+          <tr><td>cost</td><td>Cheap, no inference</td><td>Expensive, real inference</td></tr>
+          <tr><td>who it confuses</td><td>Network observers</td><td>The SI provider</td></tr>
+          <tr><td>status</td><td><span class="lb">PLANNED</span></td><td>generator: <span class="lb live">v0.1 LOCAL</span><br>reaching a model: <span class="lb">PLANNED</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <figure class="fig inv reveal" aria-label="Network decoys stop at the last hop; endpoint decoys from miners reach the model">
+        <div class="pctl">
+          <span class="seg" role="group" aria-label="Show traffic"><button type="button" data-m="all" aria-pressed="true">all</button><button type="button" data-m="net" aria-pressed="false">network noise</button><button type="button" data-m="end" aria-pressed="false">endpoint noise</button><button type="button" data-m="real" aria-pressed="false">your request</button></span>
+          <span class="lb">ILLUSTRATION</span>
+        </div>
+        <canvas class="cv" id="pipe" aria-hidden="true"></canvas>
+        <div class="read" aria-live="off">
+          <div>dropped at last hop<b id="pDrop">0</b></div>
+          <div>reached the model<b id="pHit">0</b></div>
+          <div>yours, delivered<b class="or" id="pReal">0</b></div>
+          <div>decoy inference<b class="sm" id="pCost">$0.00 - $0.00</b></div>
+        </div>
+        <figcaption class="fcap"><span class="lb">ESTIMATE</span> &nbsp;inference counter uses ~$0.001-0.005 per decoy on a cheap model. a top model costs ~10x. network decoys cost nothing at the model because they never get there.</figcaption>
+      </figure>
+
+      <p class="reveal">The Noise Pool pays mainly for endpoint noise, because that is where the cost is. <span class="lb">PLANNED</span></p>
+      <p class="reveal">In the <a href="/lab/">Noise Lab</a> (v0.1), a local decoy generator hides your request among decoys and pads every request to a fixed size class (256 B, 512 B, 1 KB, 2 KB or 4 KB), so size does not reveal which one is real. It runs only in your browser and sends nothing. <span class="lb live">v0.1 LOCAL</span></p>
+      <p class="reveal">Next, the same code becomes an open-source client that sends real requests through a partner gateway, and each user pays for their own noise. <span class="lb">PLANNED</span></p>
+      <p class="reveal">Decoys only work if they look like real requests. A generator that does not copy real request patterns can be detected. See <a href="#risks">risks</a>.</p>
+    </section>
+
+    <!-- 04 -->
+    <section class="dsec" id="who-sees-what">
+      <div class="dh reveal">[04] what each party sees</div>
+      <h2 class="reveal">Pick a seat. Watch the traffic.</h2>
+
+      <figure class="fig reveal" aria-label="The same traffic, seen from each party in the network">
+        <div class="parties" role="group" aria-label="Party">
+          <button type="button" data-p="you" aria-pressed="false"><i></i>your client</button>
+          <button type="button" data-p="n1" aria-pressed="false"><i></i>first mixnet node</button>
+          <button type="button" data-p="n3" aria-pressed="false"><i></i>last mixnet node</button>
+          <button type="button" data-p="gw" aria-pressed="false"><i></i>gateway</button>
+          <button type="button" data-p="si" aria-pressed="true"><i></i>SI provider</button>
+          <button type="button" data-p="mn" aria-pressed="false"><i></i>miner</button>
+          <button type="button" data-p="ch" aria-pressed="false"><i></i>chain observer</button>
+        </div>
+        <div class="lens">
+          <div class="lpath" id="lpath" aria-hidden="true"></div>
+          <ol class="feed" id="feed" aria-live="off"></ol>
+          <div class="lside" id="lside"></div>
+        </div>
+        <div class="pctl" style="border-top:1px solid var(--glass-line);border-bottom:0">
+          <button type="button" class="tgl" id="truth" aria-pressed="false">show which ones are real</button>
+          <span class="lb">SIMULATION</span>
+        </div>
+        <figcaption class="fcap">IPs are from documentation ranges, prompts are made up. "show which ones are real" only exists in this demo: no party in the network has that button.</figcaption>
+      </figure>
+
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>party</th><th>sees</th><th>should not see (design goal)</th></tr></thead>
+        <tbody>
+          <tr><td>Your client</td><td>Your real requests</td><td>-</td></tr>
+          <tr><td>First mixnet node</td><td>Your IP, that you send traffic, when</td><td>Content, which packets are real</td></tr>
+          <tr><td>Last mixnet node</td><td>Traffic leaving the mixnet</td><td>Your IP</td></tr>
+          <tr><td>Gateway</td><td>Request content, audit nullifiers</td><td>Your IP. Whether it can tell real from decoy: <span class="lb v">[VERIFY]</span></td></tr>
+          <tr><td>SI provider</td><td>Content of every request and response, real and decoy</td><td>Your IP, which requests are real</td></tr>
+          <tr><td>Miner</td><td>Only its own decoys</td><td>Your requests</td></tr>
+          <tr><td>Chain observer</td><td>Stakes, commits (hashes), audit results, payouts</td><td>Any request content</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="reveal">All rows: <span class="lb">PLANNED</span>. The exact view of each node depends on the mixnet used, which is not decided. <span class="lb v">[VERIFY]</span></p>
+
+      <h3 class="reveal">What zkSI does not hide</h3>
+      <p class="reveal">The SI provider still reads the content of your real request. If your prompt contains your name, your email or text that only you would write, noise does not protect you. zkSI hides <em>which</em> request is yours, not <em>what</em> it says.</p>
+
+      <figure class="fig inv reveal" aria-label="A prompt with identifying details versus a generic prompt">
+        <div class="fbar"><b>what the SI provider reads</b><span class="lb">ILLUSTRATION</span></div>
+        <div class="leak">
+          <div class="pcard" id="pcard"><span class="who">request · size class M · real? ?</span><span id="ptext"></span></div>
+          <div class="verdict" id="verdict"></div>
+        </div>
+        <figcaption class="fcap">names and address are made up. the content is the leak, not the route.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 05 -->
+    <section class="dsec" id="threat-model">
+      <div class="dh reveal">[05] threat model</div>
+      <h2 class="reveal">Who we defend against, and who we don't.</h2>
+      <p class="reveal">zkSI is built against the adversaries below. Each one says what the design does about it and whether it is built yet. None of it is: it all comes with the network. <span class="lb">PLANNED</span></p>
+
+      <figure class="fig reveal" aria-label="Pick an adversary to see where it sits and what stands in its way">
+        <div class="parties" role="group" aria-label="Adversary" id="advBtns">
+          <button type="button" data-a="net" aria-pressed="true"><i></i>network observer</button>
+          <button type="button" data-a="si" aria-pressed="false"><i></i>SI provider</button>
+          <button type="button" data-a="col" aria-pressed="false"><i></i>provider + entry node</button>
+          <button type="button" data-a="det" aria-pressed="false"><i></i>decoy detector</button>
+          <button type="button" data-a="mn" aria-pressed="false"><i></i>cheating miner</button>
+          <button type="button" data-a="self" aria-pressed="false"><i></i>miner + gateway</button>
+        </div>
+        <canvas class="cv" id="amap" aria-hidden="true"></canvas>
+        <div class="adv" id="advCard" aria-live="polite"></div>
+        <figcaption class="fcap"><span class="lb">ILLUSTRATION</span> &nbsp;orange ring = where the adversary sits. the dashed box = what is meant to stop it.</figcaption>
+      </figure>
+
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>adversary</th><th>what they want</th><th>what zkSI does</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td>Network observer</td><td>Link your IP and timing to requests</td><td>Mixnet plus network decoys, dropped at the last hop</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>SI provider</td><td>Know which requests come from real people</td><td>Endpoint decoys reach the model too; all requests use fixed size classes</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>SI provider + entry node</td><td>Match requests to people by timing</td><td>Network decoys travel with you, so timing does not single you out</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Decoy detector</td><td>Train a model that spots decoys</td><td>The generator copies real request patterns. This is an arms race, not a fix.</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Cheating miner</td><td>Get paid without sending decoys</td><td>Stake, commit before sending, random audit</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Miner + gateway</td><td>Send decoys to its own gateway and get paid for nothing</td><td>Decoys go to several staked gateways at random</td><td><span class="lb">PLANNED</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3 class="reveal">Out of scope</h3>
+      <ul class="dlist reveal">
+        <li>What your prompt says. See <a href="#who-sees-what">section 04</a>.</li>
+        <li>A compromised device. If your computer or browser is not yours anymore, nothing here helps.</li>
+        <li>A provider that refuses decoy traffic.</li>
+      </ul>
+      <p class="reveal">How much a network observer can still learn depends on the mixnet used, which is not decided. <span class="lb v">[VERIFY]</span></p>
+      <p class="reveal">If the Noise Pool runs out of money, the noise level drops and so does privacy.</p>
+    </section>
+
+    <!-- 06 -->
+    <section class="dsec" id="proof-of-noise">
+      <div class="dh reveal">[06] proof of noise</div>
+      <h2 class="reveal">Pay for decoys nobody can see.</h2>
+      <p class="reveal">Miners are paid for decoys that, by design, look like everything else. Proof of noise is how the network checks they were sent without learning which ones they were. The lab runs steps 2 to 4 locally today; the rest comes with the network.</p>
+
+      <ol class="steps5 reveal">
+        <li><b>stake</b>The miner locks a stake, for example 0.1 ETH. <span class="lb">PLANNED</span></li>
+        <li><b>commit</b>At the start of each one-hour epoch, the miner publishes on chain a hash of the batch it is about to send. <span class="lb live">v0.1 LOCAL</span> on chain: <span class="lb">PLANNED</span></li>
+        <li><b>sample</b>At the end, the hash of a future block picks about 1% of the batch. Nobody knows the sample in advance. <span class="lb live">v0.1 LOCAL</span> block hash: <span class="lb">PLANNED</span></li>
+        <li><b>open</b>The miner reveals the sampled decoys. Two checks: they were sent (their nullifier shows up at the gateway) and they look credible. <span class="lb live">v0.1 LOCAL</span> (hashes only) nullifier check: <span class="lb">PLANNED</span></li>
+        <li><b>pay or slash</b>Pass: paid for the whole batch. Fail: the stake is lost. <span class="lb">PLANNED</span></li>
+      </ol>
+
+      <figure class="fig inv reveal" aria-label="An epoch of 1,000 decoys, 10 of them opened at random, with an optional share of faked decoys">
+        <div class="pctl">
+          <span class="seg" role="group" aria-label="Faked share"><button type="button" data-f="0" aria-pressed="false">honest</button><button type="button" data-f="0.05" aria-pressed="false">fakes 5%</button><button type="button" data-f="0.2" aria-pressed="true">fakes 20%</button><button type="button" data-f="0.5" aria-pressed="false">fakes 50%</button></span>
+          <span class="lb">SIMULATION</span>
+        </div>
+        <div class="ep-head"><span id="epPhase">commit</span><span id="epHash">0x…</span></div>
+        <div class="fbody"><canvas class="cv" id="audit" aria-hidden="true"></canvas></div>
+        <div class="ep-res" id="epRes" aria-live="polite">&nbsp;</div>
+        <div class="read" aria-live="off">
+          <div>epochs run<b id="aRuns">0</b></div>
+          <div>caught<b class="or" id="aCaught">0</b></div>
+          <div>caught, so far<b id="aRate">-</b></div>
+          <div>expected<b id="aTheory">89.3%</b></div>
+        </div>
+        <figcaption class="fcap">1,000 decoys, 10 opened (1%). hollow squares are fakes: you see them here, the network does not. expected = 1 - (1 - share)^10.</figcaption>
+      </figure>
+
+      <h3 class="reveal">Why 1% can be enough</h3>
+      <p class="reveal">If a miner fakes part of a batch, every opened decoy is a chance to get caught. With 100 decoys opened:</p>
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>share faked</th><th>chance of being caught</th></tr></thead>
+        <tbody>
+          <tr><td>5%</td><td>99.4%</td></tr>
+          <tr><td>2%</td><td>86.7%</td></tr>
+          <tr><td>1%</td><td>63.4%</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="reveal"><span class="lb">ESTIMATE</span> &nbsp;math: 1 - (1 - share)^100. Small cheating is harder to catch than big cheating. The batch size per miner and the audit size are not decided. <span class="lb v">[VERIFY]</span></p>
+
+      <h3 class="reveal">Open questions</h3>
+      <ul class="dlist reveal">
+        <li>Who decides that a decoy is credible, and how. <span class="lb v">[VERIFY]</span></li>
+        <li>Whether a block hash is random enough, given that block producers can influence it. <span class="lb v">[VERIFY]</span></li>
+      </ul>
+      <p class="reveal"><strong>In the lab today.</strong> The <a href="/lab/">Noise Lab</a> runs a local version: a SHA-256 commit over the decoy hashes, then it opens ~1% (at least one), chosen from hash(commit + simulated beacon). It only checks hashes. <span class="lb live">v0.1 LOCAL</span></p>
+      <p class="reveal"><strong>v2.</strong> The audit becomes a zk proof: the miner shows that k of the published nullifiers are theirs, without saying which. <span class="lb">PLANNED</span></p>
+    </section>
+
+    <!-- 07 -->
+    <section class="dsec" id="noise-pool">
+      <div class="dh reveal">[07] noise pool</div>
+      <h2 class="reveal">Who pays for the noise.</h2>
+      <p class="reveal">The Noise Pool pays miners for verified decoys. It mainly pays for endpoint noise, because that is where the cost is. <span class="lb">PLANNED</span></p>
+      <p class="reveal">It is meant to be funded from two places: a fee of about 20% on real requests, and a bootstrap fund at the start. <span class="lb">PLANNED</span></p>
+
+      <figure class="fig reveal" aria-label="Money flows from fees and a bootstrap fund into the Noise Pool and out to miners">
+        <div class="gctl">
+          <label for="poolIn">real requests / min</label>
+          <input type="range" id="poolIn" min="0" max="1000" step="10" value="50">
+          <span class="lb">ILLUSTRATION</span>
+        </div>
+        <div class="fbody"><canvas class="cv" id="pool" aria-hidden="true"></canvas></div>
+        <div class="read" aria-live="polite">
+          <div>real<b class="or" id="plR">50</b></div>
+          <div>decoys to pay for<b id="plD">950</b></div>
+          <div>fee inflow<b id="plF">low</b></div>
+          <div>bootstrap fund<b id="plB">carries most</b></div>
+        </div>
+        <figcaption class="fcap">not to scale: the fee level and the price of a request are not decided. the shape is the point: at the start, fees are small and decoys are many; as real use grows, fees rise and the decoys to pay for fall.</figcaption>
+      </figure>
+
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>item</th><th>value</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td>Fee on real requests</td><td>~20%</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Bootstrap fund</td><td>Size and source not decided</td><td><span class="lb v">[VERIFY]</span></td></tr>
+          <tr><td>Paid to miners</td><td>Per verified decoy, for target minus real traffic</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Currency</td><td>ETH / USDC. The $ZKSI token is not used for payments; its role is not decided.</td><td><span class="lb d">DECIDED</span></td></tr>
+          <tr><td>Who controls the pool</td><td>Not decided</td><td><span class="lb v">[VERIFY]</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="reveal">Miner rewards are not guaranteed. If the pool runs dry, fewer decoys get paid for, and privacy drops with them.</p>
+      <p class="reveal">$ZKSI is the zkSI token, on Robinhood Chain (launch: 21 Oct 2026, 5 PM UTC). It has no role in the network yet: no miners, no stake, no payouts. Until that is decided, everything in this design runs in ETH / USDC. The contract address comes only from @0x_zkSI on X; anything else using the zkSI name is not ours. <span class="lb d">DECIDED</span></p>
+    </section>
+
+    <!-- 08 -->
+    <section class="dsec" id="cost">
+      <div class="dh reveal">[08] cost of privacy</div>
+      <h2 class="reveal">Privacy costs real inference.</h2>
+      <p class="reveal">An endpoint decoy is a real request to a real model, so it costs what a real request costs. We say this up front.</p>
+
+      <figure class="fig inv reveal" aria-label="Cost of one real request when it travels with decoys">
+        <div class="gctl">
+          <label for="ratioIn">decoys per real request</label>
+          <input type="range" id="ratioIn" min="0" max="20" step="1" value="2">
+          <span class="seg" role="group" aria-label="Model tier"><button type="button" data-t="1" aria-pressed="true">cheap model</button><button type="button" data-t="10" aria-pressed="false">top model (~10x)</button></span>
+        </div>
+        <div class="fbody"><canvas class="cv" id="stack" aria-hidden="true"></canvas></div>
+        <div class="read" aria-live="polite">
+          <div>decoys<b id="cN">2</b></div>
+          <div>cost multiplier<b class="or" id="cX">3x</b></div>
+          <div>per real request<b class="sm" id="cU">$0.003 - $0.015</b></div>
+          <div>per 1,000 real<b class="sm" id="cK">$3 - $15</b></div>
+        </div>
+        <figcaption class="fcap"><span class="lb">ESTIMATE</span> &nbsp;~$0.001-0.005 per request on a cheap model, ~10x on a top model. network decoys are not counted: they never reach a model.</figcaption>
+      </figure>
+
+      <h3 class="reveal">At network level, per hour</h3>
+      <p class="reveal">With a fixed target of 1,000 requests per minute, the decoys to pay for depend on how many real requests there are:</p>
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>real / min</th><th>decoys / hour</th><th>cheap model / hour</th><th>top model / hour</th></tr></thead>
+        <tbody>
+          <tr><td>50</td><td>57,000</td><td>$57 - $285</td><td>$570 - $2,850</td></tr>
+          <tr><td>500</td><td>30,000</td><td>$30 - $150</td><td>$300 - $1,500</td></tr>
+          <tr><td>900</td><td>6,000</td><td>$6 - $30</td><td>$60 - $300</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="reveal"><span class="lb">ESTIMATE</span> &nbsp;decoys / hour = (1,000 - real) x 60. The target of 1,000 is an example, and prices change over time.</p>
+    </section>
+
+    <!-- 09 -->
+    <section class="dsec" id="cryptography">
+      <div class="dh reveal">[09] cryptography</div>
+      <h2 class="reveal">Commit first. Open later.</h2>
+      <p class="reveal">The core of proof of noise is a commitment: the miner fixes the batch with a hash before anyone knows which decoys will be opened. Changing a single character afterwards changes the hash, so it shows. The lab does this today; on chain it comes with the network. <span class="lb live">v0.1 LOCAL</span></p>
+
+      <figure class="fig reveal" aria-label="A real SHA-256 commit and audit, computed in your browser">
+        <div class="pctl">
+          <span class="seg" role="group" aria-label="Step"><button type="button" data-s="0" aria-pressed="true">1 hash</button><button type="button" data-s="1" aria-pressed="false">2 commit</button><button type="button" data-s="2" aria-pressed="false">3 pick</button><button type="button" data-s="3" aria-pressed="false">4 open</button></span>
+          <button type="button" class="tgl" id="tamper" aria-pressed="false">tamper with the opened decoy</button>
+        </div>
+        <div class="crypt" id="crypt"></div>
+        <figcaption class="fcap"><span class="lb live">RUNS IN THIS PAGE</span> &nbsp;real SHA-256 from your browser (Web Crypto). the beacon is simulated: on chain it would be a future block hash.</figcaption>
+      </figure>
+
+      <p class="reveal">This is the code the figure runs:</p>
+<pre class="code reveal"><code>const sha = async s =&gt; hex(await crypto.subtle.digest("SHA-256", enc(s)));
+
+const leaves = await Promise.all(batch.map(sha));   // one hash per decoy
+const commit = await sha(leaves.join(""));          // published before sending
+
+// later: a beacon nobody knew in advance picks what gets opened
+const pick = parseInt((await sha(commit + beacon)).slice(0, 8), 16) % batch.length;
+
+// anyone can check the opened decoy against the commit
+const ok = (await sha(batch[pick])) === leaves[pick]
+        &amp;&amp; (await sha(leaves.join(""))) === commit;</code></pre>
+
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>part</th><th>what it does</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td>Commit</td><td>Hash over the decoy hashes. SHA-256 in the lab; the on-chain choice is not decided.</td><td><span class="lb live">v0.1 LOCAL</span> <span class="lb v">[VERIFY]</span></td></tr>
+          <tr><td>Random pick</td><td>Hash of a future block decides which ~1% is opened. The lab uses a simulated beacon.</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Nullifier</td><td>Shows at the gateway that a decoy was really sent</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Size classes</td><td>Every request padded to 256 B, 512 B, 1 KB, 2 KB or 4 KB</td><td><span class="lb live">v0.1 LOCAL</span></td></tr>
+          <tr><td>zk usage credit</td><td>Pay for requests without linking them to each other or to you</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>zk audit</td><td>Prove k of the published nullifiers are yours, without saying which</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Mixnet encryption</td><td>Depends on the mixnet used</td><td><span class="lb v">[VERIFY]</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="reveal">v1 has no zk: stake, commit, random audit and rewards only. The zk parts come in v2, built with a cryptographer on the team. <span class="lb">PLANNED</span></p>
+    </section>
+
+    <!-- 10 -->
+    <section class="dsec" id="verification">
+      <div class="dh reveal">[10] verification</div>
+      <h2 class="reveal">Don't trust this page. Check it.</h2>
+      <p class="reveal">What you can check today is small, and we list it as it is.</p>
+
+      <figure class="fig inv reveal" aria-label="The requests this page has made since you opened it">
+        <div class="fbar"><b>requests this page made since you opened it</b><span class="lb live">RUNS IN THIS PAGE</span></div>
+        <div class="netlog" id="netlog"></div>
+        <figcaption class="fcap">read from your own browser (Performance API). every file comes from zksi.io; the page loads nothing from anywhere else.</figcaption>
+      </figure>
+
+      <h3 class="reveal">Check the lab yourself</h3>
+      <ol class="dlist num reveal">
+        <li>Open <a href="/lab/">zksi.io/lab</a> on a computer.</li>
+        <li>Open the developer tools (F12) and go to the Network tab.</li>
+        <li>Write a request and run the lab.</li>
+        <li>No new request should appear. The page's security policy only allows connections to zksi.io itself (connect-src 'self').</li>
+      </ol>
+      <p class="reveal">The site has no build step: the files you get are the files we wrote. You can read them with view-source.</p>
+      <p class="reveal">The lab's code is public: <a href="https://github.com/zkSI0x/noise-lab" rel="noopener" target="_blank">github.com/zkSI0x/noise-lab</a> (MIT). Its standalone copy blocks every connection (connect-src 'none'), so you can run it offline and watch nothing leave. <span class="lb live">v0.1 LOCAL</span></p>
+
+      <h3 class="reveal">Later</h3>
+      <div class="tscroll reveal">
+      <table class="dt">
+        <thead><tr><th>what</th><th>how you will check it</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td>Client that sends real requests</td><td>Open-source repository, like the lab</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Commits, audits, payouts</td><td>On chain, in a block explorer (testnet in v1)</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>"What the provider sees"</td><td>24-hour demo with the provider's view published</td><td><span class="lb">PLANNED</span></td></tr>
+          <tr><td>Node counts</td><td>Shown only once they can be checked on chain</td><td><span class="lb d">DECIDED</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="dsec" id="risks">
+      <div class="dh reveal">[11] risks and limits</div>
+      <h2 class="reveal">Open problems, written down.</h2>
+      <p class="reveal">None of these are solved. Each has a planned answer, and each answer still has to be tested.</p>
+      <div class="rgrid reveal">
+        <article class="rcard"><div class="rtop"><span>RK.01</span><span class="lb">OPEN</span></div><canvas class="rcv" data-r="0" aria-hidden="true"></canvas><h4>self-dealing</h4><p>A miner who also runs a gateway could "send" decoys to itself and get paid for nothing.</p><p class="fix"><span>planned answer:</span> decoys go to several gateways at random, and gateways stake too.</p></article>
+        <article class="rcard"><div class="rtop"><span>RK.02</span><span class="lb">OPEN</span></div><canvas class="rcv" data-r="1" aria-hidden="true"></canvas><h4>noise detectors</h4><p>A provider can train a model to spot decoys. This becomes an arms race, not a one-time fix.</p><p class="fix"><span>planned answer:</span> the decoy generator copies real request patterns and is updated over time.</p></article>
+        <article class="rcard"><div class="rtop"><span>RK.03</span><span class="lb">OPEN</span></div><canvas class="rcv" data-r="2" aria-hidden="true"></canvas><h4>provider terms</h4><p>Automated fake traffic to closed SI providers may break their terms of use.</p><p class="fix"><span>answer:</span> start on open-source models run by partner gateways. <span class="lb d">DECIDED</span></p></article>
+        <article class="rcard"><div class="rtop"><span>RK.04</span><span class="lb">OPEN</span></div><canvas class="rcv" data-r="3" aria-hidden="true"></canvas><h4>cost</h4><p>Endpoint decoys cost real inference. If funding dries up, the noise level drops and so does privacy.</p><p class="fix"><span>planned answer:</span> fee on real requests plus a bootstrap fund, with the cost shown openly.</p></article>
+      </div>
+      <h3 class="reveal">Limits</h3>
+      <ul class="dlist reveal">
+        <li>zkSI hides which request is yours, not what it says.</li>
+        <li>v0.1 does not send your request to any SI model, so it does not protect a real request yet. It shows the mechanism, locally. <span class="lb live">v0.1 LOCAL</span></li>
+        <li>It is not "100% anonymous", and nothing here is unbreakable. Do not rely on it for anything where a leak could hurt you.</li>
+        <li>The lab's decoys come from fixed templates; a trained detector could spot many of them. <span class="lb live">v0.1 LOCAL</span></li>
+        <li>The lab's audit only checks hashes, and its timings are simulated. <span class="lb live">v0.1 LOCAL</span></li>
+        <li>The mixnet is not chosen, so the network layer's real protection is unknown. <span class="lb v">[VERIFY]</span></li>
+        <li>A block hash as randomness may be biased by block producers. <span class="lb v">[VERIFY]</span></li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section class="dsec" id="roadmap">
+      <div class="dh reveal">[12] roadmap</div>
+      <h2 class="reveal">Small, testable steps.</h2>
+      <p class="reveal">Times are estimates for building each step, not dates. Nothing starts counting until the previous step works.</p>
+      <div class="track reveal" id="track">
+        <div class="tk-line"><i id="tkFill"></i></div>
+        <div class="tk-row">
+          <div class="tk now"><span class="v">v0.1 · now</span><h4>noise lab</h4><p>Local decoys, fixed size classes, random timing, local commit and audit, in your browser. Code public under MIT. <span class="lb live">v0.1 LOCAL</span></p><p>Next: the same code as an open-source client that sends real requests through a partner gateway; everyone pays for their own noise. <span class="lb">PLANNED</span></p><span class="t">running today</span></div>
+          <div class="tk"><span class="v">demo</span><h4>what the provider sees</h4><p>Run it for 24 hours and publish the provider's view: a flat line where real requests can not be picked out. <span class="lb">PLANNED</span></p><span class="t">1 week</span></div>
+          <div class="tk"><span class="v">v1</span><h4>noise pool on testnet</h4><p>Contract for stake, commit, random audit and rewards. No zk yet. <span class="lb">PLANNED</span></p><span class="t">~2 months</span></div>
+          <div class="tk"><span class="v">v2</span><h4>zk audits</h4><p>Audits become zero-knowledge proofs, built with a cryptographer on the team. <span class="lb">PLANNED</span></p><span class="t">3+ months</span></div>
+        </div>
+      </div>
+      <div class="callout reveal"><span class="lb d">$ZKSI</span><br>$ZKSI is the only zkSI token, on Robinhood Chain (launch: 21 Oct 2026, 5 PM UTC). It does not run the network: miners, stake and payouts are PLANNED, and its role is not decided. No price, return or reward is promised. The contract address comes only from @0x_zkSI on X; anything else using the zkSI name is not ours.</div>
+    </section>
+
+    <!-- 13 -->
+    <section class="dsec" id="disclosure">
+      <div class="dh reveal">[13] disclosure</div>
+      <h2 class="reveal">Found a problem? Tell us first.</h2>
+      <p class="reveal">If you find a security problem in zksi.io or the Noise Lab, email us before you publish it.</p>
+      <div class="mailbox reveal">
+        <span class="k">security reports</span>
+        <code id="mailAddr">contact@zksi.io</code>
+        <button type="button" class="tgl" id="mailCopy">copy</button>
+        <span class="k">subject</span><code>security: &lt;short title&gt;</code>
+      </div>
+      <h3 class="reveal">Please</h3>
+      <ul class="dlist reveal">
+        <li>Describe the problem and the steps to reproduce it.</li>
+        <li>Give us a reasonable time to fix it before you make it public.</li>
+        <li>Do not access other people's data and do not run attacks that slow the site down for others.</li>
+      </ul>
+      <p class="reveal">We read every report. There is no bug bounty yet. In scope today: zksi.io and the Noise Lab. The network comes next, so there is no network or contract to test yet.</p>
+      <div class="callout reveal"><span class="lb v">ANTI-SCAM</span><br>No one from zkSI will ever ask you for keys, seed phrases or money, by DM or anywhere else. Official links: zksi.io, x.com/0x_zkSI, t.me/zkSI0x, github.com/zkSI0x.</div>
+    </section>
+
+    <!-- 14 -->
+    <section class="dsec" id="faq">
+      <div class="dh reveal">[14] faq</div>
+      <h2 class="reveal">Short answers.</h2>
+      <div class="faq reveal">
+        <details><summary>Is there a token?</summary><p>Yes: $ZKSI, on Robinhood Chain (launch: 21 Oct 2026, 5 PM UTC). It does not run the network yet and its role is not decided. The contract address comes only from @0x_zkSI on X; anything else using the zkSI name is not ours. <span class="lb d">DECIDED</span></p></details>
+        <details><summary>What runs today?</summary><p>v0.1 · local only. The Noise Lab runs today in your browser: decoys, fixed size classes, random timing, commit and audit. The network comes next: no miners, gateways or contracts yet. <span class="lb live">v0.1 LOCAL</span></p></details>
+        <details><summary>Does the lab protect my real requests today?</summary><p>No. v0.1 does not send your request to any SI model. It shows the mechanism locally, so you can test it without an account or an install. <span class="lb live">v0.1 LOCAL</span></p></details>
+        <details><summary>Is the code public?</summary><p>The lab's code is: <a href="https://github.com/zkSI0x/noise-lab" rel="noopener" target="_blank">github.com/zkSI0x/noise-lab</a>, under MIT. <span class="lb live">v0.1 LOCAL</span></p></details>
+        <details><summary>Does the lab send what I type anywhere?</summary><p>No. It runs 100% locally and makes no network request after the page loads. You can check it yourself, see <a href="#verification">verification</a>. <span class="lb live">v0.1 LOCAL</span></p></details>
+        <details><summary>Will zkSI hide what I write?</summary><p>No. It is meant to hide which request is yours, not what it says. If your prompt names you, noise does not help. See <a href="#who-sees-what">section 04</a>.</p></details>
+        <details><summary>Is it 100% anonymous?</summary><p>No, and we will not say it is. The open problems are listed in <a href="#risks">risks and limits</a>.</p></details>
+        <details><summary>Why do decoys cost money?</summary><p>Endpoint decoys are real requests to real models, so they cost real inference: ~$0.001-0.005 each on a cheap model, ~10x on a top model. See <a href="#cost">cost of privacy</a>. <span class="lb">ESTIMATE</span></p></details>
+        <details><summary>Which models will it use?</summary><p>Open-source models run by partner gateways. Automated decoy traffic to closed SI providers may break their terms. <span class="lb d">DECIDED</span></p></details>
+        <details><summary>Can I mine now? How much would I earn?</summary><p>No one can mine yet: the network comes next. Miners would be paid per verified decoy from the Noise Pool, and rewards are not guaranteed. <span class="lb">PLANNED</span></p></details>
+        <details><summary>Someone from zkSI messaged me. Is that real?</summary><p>No one from zkSI will ever ask you for keys, seed phrases or money. Official links: zksi.io, x.com/0x_zkSI, t.me/zkSI0x, github.com/zkSI0x.</p></details>
+      </div>
+    </section>
+
+  </article>
+</div>
+
+<footer class="foot">
+  <nav class="social" aria-label="zkSI links">
+    <a href="https://x.com/0x_zkSI" target="_blank" rel="noopener noreferrer" aria-label="X @0x_zkSI" data-tip="@0x_zkSI"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="9" y="1" width="1" height="1"/><rect x="10" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/></svg></a>
+    <a href="https://t.me/zkSI0x" target="_blank" rel="noopener noreferrer" aria-label="Telegram zkSI0x" data-tip="t.me/zkSI0x"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="10" y="1" width="1" height="1"/><rect x="11" y="1" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="8" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="7" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/></svg></a>
+    <a href="https://github.com/zkSI0x" target="_blank" rel="noopener noreferrer" aria-label="GitHub zkSI0x" data-tip="github.com/zkSI0x"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="7" y="1" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/></svg></a>
+    <a href="/docs/" aria-label="Docs" data-tip="docs"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="2" y="10" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="5" y="10" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="7" y="10" width="1" height="1"/><rect x="8" y="10" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/></svg></a>
+    <a href="mailto:contact@zksi.io" aria-label="Email contact@zksi.io" data-tip="contact@zksi.io"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="11" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="11" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="11" y="6" width="1" height="1"/><rect x="0" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="11" y="7" width="1" height="1"/><rect x="0" y="8" width="1" height="1"/><rect x="11" y="8" width="1" height="1"/><rect x="0" y="9" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="3" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="8" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="11" y="9" width="1" height="1"/></svg></a>
+  </nav>
+  <span>© 2026 zkSI</span>
+  <p>zkSI v0.1 runs locally in your browser in the <a href="/lab/">lab</a>; the network comes next. the only zkSI token is $ZKSI, on robinhood chain; its contract address comes only from @0x_zkSI. no one from zkSI will ever ask you for keys, seed phrases or money.</p>
+</footer>
+
+<script src="/docs/docs.js?v=2" defer></script>
+</body>
+</html>

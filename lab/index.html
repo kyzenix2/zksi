@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noise lab v0.1 | zkSI</title>
+<meta name="description" content="zkSI v0.1, running in your browser: hide one SI request among decoys, pad everything to fixed size classes, commit and audit. Nothing is sent anywhere.">
+<meta name="theme-color" content="#212121">
+<link rel="canonical" href="https://zksi.io/lab/">
+<link rel="icon" type="image/svg+xml" href="/assets/zksi-mark-B-light.svg" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/svg+xml" href="/assets/zksi-mark-B-dark.svg" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Noise lab | zkSI">
+<meta property="og:description" content="Hide one SI request among decoys, in your browser. Nothing is sent anywhere.">
+<meta property="og:url" content="https://zksi.io/lab/">
+<meta property="og:image" content="https://zksi.io/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+:root{
+  --ink:#212121; --paper:#F5F4F0; --paper-2:#FFFEFB; --mute:#6C6C70;
+  --olive:#C7C7A3; --lime:#EBFF79; --orange:#E45E3F;
+  --bg:var(--paper); --fg:var(--ink); --fg-2:var(--mute); --line:rgba(33,33,33,.14); --card:#FFFEFB;
+  --sans:Inter,system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace; --mono-s:"IBM Plex Mono",ui-monospace,monospace;
+}
+:root[data-theme="dark"]{ --bg:var(--ink); --fg:var(--paper-2); --fg-2:#A0A0A0; --line:rgba(255,254,251,.14); --card:#2a2a2a; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:18px 18px}
+a{color:inherit}
+.top{position:fixed;inset:0 0 auto 0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:18px 28px;font-family:var(--mono-s);font-size:12px;border-bottom:1px solid transparent;transition:background .3s,border-color .3s}
+.top.solid{background:color-mix(in srgb,var(--bg) 94%,transparent);border-bottom-color:var(--line)}
+.mark{display:flex;align-items:center;line-height:0}.mark img{height:26px;width:auto}
+.logo-l{display:none}:root[data-theme="light"] .logo-l{display:block}:root[data-theme="light"] .logo-d{display:none}
+.nav{display:flex;gap:22px;align-items:center}.nav a{text-decoration:none;opacity:.8}.nav a:hover,.nav a[aria-current]{opacity:1}
+.nav a[aria-current]:after{content:" ●";color:var(--orange)}
+.toggle{font:inherit;color:var(--fg);background:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+main{max-width:1180px;margin:0 auto;padding:120px 32px 80px}
+.st{display:inline-block;font-family:var(--mono-s);font-size:10px;letter-spacing:.08em;border:1px solid currentColor;padding:1px 6px;border-radius:2px;color:var(--fg-2);white-space:nowrap}
+.st.or{color:var(--orange)}
+.head{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:end;padding-bottom:30px;border-bottom:1px solid var(--line);margin-bottom:34px}
+.big{font-weight:600;font-size:clamp(38px,5.6vw,72px);line-height:1;letter-spacing:-.03em}
+.big div{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.big sup{font-family:var(--mono);font-size:.22em;font-weight:500;vertical-align:top;position:relative;top:.4em;letter-spacing:0}
+.lede{font-family:var(--mono);font-size:13px;line-height:1.7}
+.lede p+p{margin-top:12px}
+.lede .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.lede .src{margin-top:14px;color:var(--fg-2)}
+.lede .src a{color:var(--fg);text-decoration:underline;text-underline-offset:3px}
+.lede .src a:hover,.lede .src a:focus-visible{color:var(--orange)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:20px;position:relative}
+.card i.d{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--fg)}
+.card i.d:nth-of-type(1){left:-4px;top:-4px}.card i.d:nth-of-type(2){right:-4px;top:-4px}.card i.d:nth-of-type(3){left:-4px;bottom:-4px}.card i.d:nth-of-type(4){right:-4px;bottom:-4px}
+.label{font-family:var(--mono-s);font-size:12px;color:var(--fg-2);display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
+textarea{width:100%;min-height:130px;resize:vertical;font:15px/1.55 var(--sans);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:14px}
+textarea:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:20px;align-items:start}
+.classes{display:flex;gap:6px;flex-wrap:wrap}
+.cls{font-family:var(--mono-s);font-size:12px;border:1px solid var(--line);padding:5px 9px;border-radius:2px;color:var(--fg-2)}
+.cls.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.range{display:flex;align-items:center;gap:14px;font-family:var(--mono-s);font-size:12px}
+.range output{font-family:var(--sans);font-weight:600;font-size:28px;min-width:2ch}
+input[type=range]{flex:1;accent-color:var(--orange);height:28px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono-s);font-size:12px;color:var(--fg-2);margin-top:18px}
+.meta em{font-style:normal;border:1px solid currentColor;padding:0 5px;border-radius:2px;font-size:10px;margin-left:4px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{font:500 13px var(--mono);letter-spacing:.02em;border:1px solid var(--fg);background:var(--fg);color:var(--bg);padding:11px 16px;border-radius:2px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--fg)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+#out{margin-top:46px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin:40px 0 14px;font-family:var(--mono-s);font-size:12px}
+.sec-h h2{font:500 14px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.sec-h span{color:var(--fg-2)}
+.list{list-style:none;border-top:1px solid var(--line)}
+.pick{all:unset;box-sizing:border-box;display:grid;grid-template-columns:34px 92px 60px 1fr 100px;gap:14px;width:100%;padding:11px 8px;border-bottom:1px solid var(--line);cursor:pointer;font-family:var(--mono-s);font-size:12px;align-items:baseline}
+.pick:hover{background:color-mix(in srgb,var(--fg) 6%,transparent)}
+.pick:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
+.pick .p{font-family:var(--sans);font-size:14px;line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pick .n,.pick .t,.pick .c,.pick .h{color:var(--fg-2)}
+.pick .h{text-align:right}
+.row.real .pick{background:color-mix(in srgb,var(--orange) 16%,transparent)}
+.row.real .pick .n{color:var(--orange)}
+.row.real .pick .n:after{content:" you"}
+.row.guessed:not(.real) .pick{outline:1px dashed var(--fg-2);outline-offset:-3px}
+.result{font-family:var(--mono);font-size:13px;line-height:1.6;margin:14px 0}
+.result b{color:var(--orange);font-weight:500}
+#wire{width:100%;height:auto;display:block;color:var(--fg);font-family:var(--mono-s);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+code,pre{font-family:var(--mono-s);font-size:12px}
+pre{white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--line);padding:10px;margin:8px 0 12px;border-radius:2px;color:var(--fg-2)}
+.commit{word-break:break-all;font-family:var(--mono);font-size:13px;margin:10px 0 16px}
+.audit p{font-family:var(--mono-s);font-size:12px;line-height:1.6;margin-top:6px}
+.verdict.ok{color:var(--fg)}.verdict.ok:before{content:"● ";color:var(--lime);-webkit-text-stroke:1px var(--fg)}
+.verdict.bad{color:var(--orange)}
+.fine{color:var(--fg-2)}
+.limits{margin-top:56px;border-top:1px solid var(--line);padding-top:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;font-family:var(--mono);font-size:13px;line-height:1.7}
+.limits h2{font:inherit}
+.limits ul{list-style:none}.limits li{padding:6px 0;border-bottom:1px solid var(--line)}
+.foot{padding:28px 32px 34px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;font-family:var(--mono-s);font-size:12px;background:var(--bg)}
+.foot p{color:var(--fg-2);grid-column:1/-1;line-height:1.6}
+.social{display:flex;gap:10px;flex-wrap:wrap}
+.social a{position:relative;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:3px;color:var(--fg);transition:background .2s,color .2s,border-color .2s}
+.social a:hover,.social a:focus-visible{background:var(--fg);color:var(--bg);border-color:var(--fg);outline:none}
+.social a:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;padding:3px 7px;background:var(--fg);color:var(--bg);border-radius:2px;opacity:0;pointer-events:none;transition:opacity .15s}
+.social a:hover:after,.social a:focus-visible:after{opacity:1}
+@media (max-width:820px){
+  .top{padding:14px 16px}.nav{gap:10px;white-space:nowrap}.nav .hide-m{display:none}.toggle{padding:6px 10px}
+  main{padding:96px 16px 60px}
+  .head,.row2,.grid2,.limits{grid-template-columns:1fr;gap:18px}
+  .pick{grid-template-columns:30px 1fr auto;gap:4px 10px}
+  .pick .p{grid-column:1/-1;grid-row:2}
+  .pick .t{grid-column:2}.pick .h{display:none}
+  .foot{grid-template-columns:1fr;padding:24px 16px 30px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="mark" href="/" aria-label="zkSI home">
+    <img class="logo-d" src="/assets/zksi-lockup-B-dark.svg" alt="zkSI" width="81" height="26">
+    <img class="logo-l" src="/assets/zksi-lockup-B-light.svg" alt="zkSI" width="81" height="26">
+  </a>
+  <nav class="nav">
+    <a class="hide-m" href="/#how">how it works</a>
+    <a href="/lab/" aria-current="page">lab</a>
+    <a href="/docs/">docs</a>
+    <button class="toggle" id="theme" type="button" aria-label="Toggle light and dark theme">light / dark</button>
+  </nav>
+</header>
+
+<main>
+  <section class="head">
+    <h1 class="big"><div><span>noise lab<sup>[nz.lab]</sup></span></div><div><span>v0.1</span><span>local</span></div></h1>
+    <div class="lede">
+      <p>type a request. the lab hides it among decoy requests, pads every request to a fixed size class, gives them random arrival times, and commits to the decoys with a hash. then you look at the batch the way a provider would.</p>
+      <p>this is the v0.1 client logic, running in your browser. nothing you type leaves this page: no request reaches any model, network or server.</p>
+      <div class="tags"><span class="st or">LIVE · LOCAL ONLY</span><span class="st">v0.1</span><span class="st">NO NETWORK</span></div>
+      <p class="src">source: <a href="https://github.com/zkSI0x/noise-lab" target="_blank" rel="noopener noreferrer">github.com/zkSI0x/noise-lab</a> · MIT</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="composeH">
+    <i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i>
+    <div class="label"><span id="composeH">your request</span><span>stays on this device</span></div>
+    <label class="visually-hidden" for="prompt" style="position:absolute;left:-9999px">your request</label>
+    <textarea id="prompt" maxlength="3800" placeholder="ask anything, the way you would ask a model…" spellcheck="false"></textarea>
+    <div class="row2">
+      <div>
+        <div class="label"><span>size class</span><span>bytes after padding</span></div>
+        <div class="classes" id="classes" aria-live="polite"></div>
+      </div>
+      <div>
+        <div class="label"><label for="k">decoys per real request</label><span>more decoys, more cost</span></div>
+        <div class="range"><input type="range" id="k" min="1" max="19" value="9"><output id="kOut" for="k">9</output></div>
+      </div>
+    </div>
+    <div class="meta" id="meta" aria-live="polite"></div>
+    <div class="actions">
+      <button class="btn" id="go" type="button" disabled>hide it in noise</button>
+      <button class="btn ghost" id="example" type="button">use an example</button>
+    </div>
+  </section>
+
+  <section id="out" hidden>
+    <div class="sec-h"><h2>what the provider sees</h2><span id="sizes"></span></div>
+    <p class="result" id="result" aria-live="polite"></p>
+    <ol class="list" id="list"></ol>
+    <div class="actions">
+      <button class="btn ghost" id="reveal" type="button">reveal mine</button>
+      <button class="btn ghost" id="again" type="button">new batch, same request</button>
+      <button class="btn ghost" id="dl" type="button">download batch.json</button>
+    </div>
+
+    <div class="sec-h"><h2>what the network sees</h2><span>time and size only · <span class="st">SIMULATED TIMING</span></span></div>
+    <div class="card"><svg id="wire" viewBox="0 0 1000 120" role="img" aria-label="Arrival time and size of each request"></svg></div>
+
+    <div class="grid2">
+      <div>
+        <div class="sec-h"><h2>commit</h2><span>before sending</span></div>
+        <div class="card">
+          <div class="label"><span>sha-256 over <span id="ndecoy">0</span> decoy hashes</span><span class="st">LOCAL</span></div>
+          <div class="commit" id="commit"></div>
+          <p class="fine" style="font-family:var(--mono-s);font-size:12px;line-height:1.6">a miner publishes this before the epoch. later, a random sample of decoys must match it.</p>
+        </div>
+      </div>
+      <div>
+        <div class="sec-h"><h2>audit</h2><span>open ~1%, at least one</span></div>
+        <div class="card">
+          <button class="btn" id="runAudit" type="button">run audit</button>
+          <div class="audit" id="audit" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="limits" aria-labelledby="limH">
+    <h2 id="limH"><span class="st">LIMITS OF v0.1</span></h2>
+    <ul>
+      <li>local only. there are no miners, gateways or contracts yet, so nothing is paid and nothing is sent.</li>
+      <li>the decoy generator uses fixed templates. a provider with a trained detector could spot many of them; making decoys match real conversation patterns is open work.</li>
+      <li>the audit here only checks hashes. the planned audit also checks that each decoy reached a gateway.</li>
+      <li>timing is simulated. a real client must also hide when you type and send.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="foot">
+  <nav class="social" aria-label="zkSI links">
+    <a href="https://x.com/0x_zkSI" target="_blank" rel="noopener noreferrer" aria-label="X @0x_zkSI" data-tip="@0x_zkSI"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="9" y="1" width="1" height="1"/><rect x="10" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/></svg></a>
+    <a href="https://t.me/zkSI0x" target="_blank" rel="noopener noreferrer" aria-label="Telegram zkSI0x" data-tip="t.me/zkSI0x"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="10" y="1" width="1" height="1"/><rect x="11" y="1" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="8" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="8" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="7" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/></svg></a>
+    <a href="https://github.com/zkSI0x" target="_blank" rel="noopener noreferrer" aria-label="GitHub zkSI0x" data-tip="github.com/zkSI0x"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="7" y="1" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="8" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/></svg></a>
+    <a href="/docs/" aria-label="Docs" data-tip="docs"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="7" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="8" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="2" y="10" width="1" height="1"/><rect x="3" y="10" width="1" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="5" y="10" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="7" y="10" width="1" height="1"/><rect x="8" y="10" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/></svg></a>
+    <a href="mailto:contact@zksi.io" aria-label="Email contact@zksi.io" data-tip="contact@zksi.io"><svg viewBox="0 0 12 12" width="18" height="18" aria-hidden="true" focusable="false" shape-rendering="crispEdges" fill="currentColor"><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="10" y="3" width="1" height="1"/><rect x="11" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="11" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="11" y="6" width="1" height="1"/><rect x="0" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="11" y="7" width="1" height="1"/><rect x="0" y="8" width="1" height="1"/><rect x="11" y="8" width="1" height="1"/><rect x="0" y="9" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="3" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="8" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="11" y="9" width="1" height="1"/></svg></a>
+  </nav>
+  <span>© 2026 zkSI</span>
+  <p>zkSI v0.1 runs locally in your browser; the network comes next. the only zkSI token is $ZKSI, on robinhood chain; its contract address comes only from @0x_zkSI. no one from zkSI will ever ask you for keys, seed phrases or money.</p>
+</footer>
+
+<script src="/lab/lab.js?v=3" defer></script>
+</body>
+</html>
